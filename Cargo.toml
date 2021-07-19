@@ -1,0 +1,6 @@
+[workspace]
+members = [
+  "impulse",
+  "impulse_actuator",
+  "impulse_interface",
+]
