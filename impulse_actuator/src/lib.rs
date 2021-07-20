@@ -27,6 +27,10 @@ impl Actuator {
             socket_base,
         })
     }
+
+    pub async fn boot(&self) {
+        unimplemented!()
+    }
 }
 
 #[cfg(test)]
@@ -63,5 +67,12 @@ mod tests {
         let test_actuator_socket_base_metadata = fs::metadata(&test_actuator.socket_base).await?;
         assert!(test_actuator_socket_base_metadata.is_dir());
         Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    #[should_panic]
+    async fn boot() {
+        let test_actuator = Actuator::init().await.unwrap();
+        test_actuator.boot().await
     }
 }
