@@ -34,7 +34,7 @@ impl Actuator {
         })
     }
 
-    pub async fn boot(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn boot(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let stdin = Stdio::null();
         let stdout = Stdio::null();
         let stderr = Stdio::null();
@@ -55,6 +55,10 @@ impl Actuator {
             .arg("--config-file")
             .arg(config_file)
             .spawn()?;
+
+        if let Some(id) = command.id() {
+            self.running_pids.push(id)
+        }
 
         Ok(())
     }
@@ -99,9 +103,10 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn boot() -> Result<(), Box<dyn std::error::Error>> {
-        let test_actuator = Actuator::init().await?;
+        let mut test_actuator = Actuator::init().await?;
         let test_actuator_boot = test_actuator.boot().await;
         assert!(test_actuator_boot.is_err());
+        assert!(test_actuator.running_pids.is_empty());
         Ok(())
     }
 }
