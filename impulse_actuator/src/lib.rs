@@ -1,6 +1,8 @@
 use std::path::PathBuf;
+use std::process::Stdio;
 
 use tokio::fs;
+use tokio::process::Command;
 
 pub struct Actuator {
     pub firecracker_binary: PathBuf,
@@ -28,8 +30,23 @@ impl Actuator {
         })
     }
 
-    pub async fn boot(&self) {
-        unimplemented!()
+    pub async fn boot(&self) -> Result<(), Box<dyn std::error::Error>> {
+        let stdin = Stdio::null();
+        let stdout = Stdio::null();
+        let stderr = Stdio::null();
+        let api_socket = self
+            .socket_base
+            .as_path()
+            .join("socket_name_goes_here.socket");
+        let command = Command::new(&self.firecracker_binary)
+            .stdin(stdin)
+            .stdout(stdout)
+            .stderr(stderr)
+            .arg("--api-sock")
+            .arg(api_socket)
+            .spawn()?;
+
+        Ok(())
     }
 }
 
@@ -70,9 +87,10 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    #[should_panic]
-    async fn boot() {
-        let test_actuator = Actuator::init().await.unwrap();
-        test_actuator.boot().await
+    async fn boot() -> Result<(), Box<dyn std::error::Error>> {
+        let test_actuator = Actuator::init().await?;
+        let test_actuator_boot = test_actuator.boot().await;
+        assert!(test_actuator_boot.is_err());
+        Ok(())
     }
 }
