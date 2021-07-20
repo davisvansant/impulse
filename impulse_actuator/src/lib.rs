@@ -38,12 +38,18 @@ impl Actuator {
             .socket_base
             .as_path()
             .join("socket_name_goes_here.socket");
+        let config_file = self
+            .config_base_dir
+            .as_path()
+            .join("config_file_name_goes_here.json");
         let command = Command::new(&self.firecracker_binary)
             .stdin(stdin)
             .stdout(stdout)
             .stderr(stderr)
             .arg("--api-sock")
             .arg(api_socket)
+            .arg("--config-file")
+            .arg(config_file)
             .spawn()?;
 
         Ok(())
