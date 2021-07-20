@@ -6,6 +6,7 @@ pub struct Actuator {
     pub firecracker_binary: PathBuf,
     pub jailer_binary: PathBuf,
     pub config_base_dir: PathBuf,
+    pub socket_base: PathBuf,
 }
 
 impl Actuator {
@@ -16,10 +17,14 @@ impl Actuator {
         let config_base_dir = PathBuf::from("/var/lib/impulse/machine");
         fs::create_dir_all(&config_base_dir).await?;
 
+        let socket_base = PathBuf::from("/tmp/impulse/socket");
+        fs::create_dir_all(&socket_base).await?;
+
         Ok(Actuator {
             firecracker_binary,
             jailer_binary,
             config_base_dir,
+            socket_base,
         })
     }
 }
@@ -42,6 +47,10 @@ mod tests {
         assert_eq!(
             test_actuator.config_base_dir.to_str().unwrap(),
             "/var/lib/impulse/machine"
+        );
+        assert_eq!(
+            test_actuator.socket_base.to_str().unwrap(),
+            "/tmp/impulse/socket",
         );
         Ok(())
     }
