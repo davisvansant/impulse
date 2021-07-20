@@ -9,6 +9,7 @@ pub struct Actuator {
     pub jailer_binary: PathBuf,
     pub config_base_dir: PathBuf,
     pub socket_base: PathBuf,
+    pub running_pids: Vec<u32>,
 }
 
 impl Actuator {
@@ -22,11 +23,14 @@ impl Actuator {
         let socket_base = PathBuf::from("/tmp/impulse/socket");
         fs::create_dir_all(&socket_base).await?;
 
+        let running_pids = Vec::with_capacity(20);
+
         Ok(Actuator {
             firecracker_binary,
             jailer_binary,
             config_base_dir,
             socket_base,
+            running_pids,
         })
     }
 
@@ -89,6 +93,7 @@ mod tests {
         );
         let test_actuator_socket_base_metadata = fs::metadata(&test_actuator.socket_base).await?;
         assert!(test_actuator_socket_base_metadata.is_dir());
+        assert!(test_actuator.running_pids.is_empty());
         Ok(())
     }
 
