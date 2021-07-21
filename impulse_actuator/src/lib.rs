@@ -36,7 +36,7 @@ impl Actuator {
         })
     }
 
-    pub async fn boot(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn launch_vm(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let stdin = Stdio::null();
         let stdout = Stdio::null();
         let stderr = Stdio::null();
@@ -104,9 +104,9 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn boot() -> Result<(), Box<dyn std::error::Error>> {
+    async fn launch_vm() -> Result<(), Box<dyn std::error::Error>> {
         let mut test_actuator = Actuator::init().await?;
-        let test_actuator_boot = test_actuator.boot().await;
+        let test_actuator_boot = test_actuator.launch_vm().await;
         assert!(test_actuator_boot.is_err());
         assert!(test_actuator.running_pids.is_empty());
         Ok(())
