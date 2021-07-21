@@ -68,6 +68,14 @@ impl Actuator {
     pub async fn shutdown_vm(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         unimplemented!()
     }
+
+    pub async fn shutdown(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        if self.active {
+            self.active = false;
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -122,5 +130,14 @@ mod tests {
         let mut test_actuator = Actuator::init().await.unwrap();
         let test_actuator_shutdown_vm = test_actuator.shutdown_vm().await;
         assert!(test_actuator_shutdown_vm.is_err());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn shutdown() -> Result<(), Box<dyn std::error::Error>> {
+        let mut test_actuator = Actuator::init().await?;
+        assert!(test_actuator.active);
+        test_actuator.shutdown().await?;
+        assert!(!test_actuator.active);
+        Ok(())
     }
 }
