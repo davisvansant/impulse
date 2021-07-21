@@ -10,6 +10,7 @@ pub struct Actuator {
     pub config_base: PathBuf,
     pub socket_base: PathBuf,
     pub running_pids: Vec<u32>,
+    pub active: bool,
 }
 
 impl Actuator {
@@ -31,6 +32,7 @@ impl Actuator {
             config_base,
             socket_base,
             running_pids,
+            active: true,
         })
     }
 
@@ -97,6 +99,7 @@ mod tests {
         let test_actuator_socket_base_metadata = fs::metadata(&test_actuator.socket_base).await?;
         assert!(test_actuator_socket_base_metadata.is_dir());
         assert!(test_actuator.running_pids.is_empty());
+        assert!(test_actuator.active);
         Ok(())
     }
 
