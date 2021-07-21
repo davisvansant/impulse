@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package impulse;
+
+service Interface {
+  rpc SystemStatus (Empty) returns (SystemStatusResponse) {}
+  rpc SystemVersion (Empty) returns (SystemVersionResponse) {}
+  rpc LaunchVM (MicroVM) returns (LaunchVMResponse) {}
+  rpc ShutdownVM (MicroVM) returns (ShutdownVMResponse) {}
+}
+
+message Empty {}
+
+message SystemStatusResponse {
+  string status = 1;
+}
+
+message SystemVersionResponse {
+  string version = 1;
+}
+
+message MicroVM {
+  string name = 1;
+}
+
+message LaunchVMResponse {
+  bool launched = 1;
+  string details = 2;
+}
+
+message ShutdownVMResponse {
+  bool shutdown = 1;
+  string details = 2;
+}
