@@ -9,4 +9,5 @@ edition = "2018"
 impulse_actuator = { path = "../impulse_actuator" }
 impulse_interface = { path = "../impulse_interface" }
 
+clap = { version = "2.33.3", default-features = false }
 tokio = { version = "1.8.2", default-features = false, features = [ "macros", "rt-multi-thread" ] }
