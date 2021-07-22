@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package impulse.runner;
+package impulse.internal.v010;
 
-service Runner {
+service Interface {
   rpc Connect (ConnectionRequest) returns (ConnectionResponse) {}
   rpc Run (stream Tasks) returns (stream Tasks) {}
   rpc Shutdown (ShutdownRequest) returns (ShutdownResponse) {}
