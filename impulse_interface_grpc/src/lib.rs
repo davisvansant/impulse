@@ -7,7 +7,7 @@ use impulse::{
 };
 
 pub mod impulse {
-    include!("../../proto/impulse.rs");
+    include!("../../proto/impulse.interface.rs");
 }
 
 #[derive(Default)]
