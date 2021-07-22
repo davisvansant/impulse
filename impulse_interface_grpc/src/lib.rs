@@ -7,7 +7,7 @@ use impulse::{
 };
 
 pub mod impulse {
-    tonic::include_proto!("impulse");
+    include!("../../proto/impulse.rs");
 }
 
 #[derive(Default)]
