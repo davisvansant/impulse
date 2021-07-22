@@ -1,20 +1,20 @@
 use tonic::{transport::Server, Request, Response, Status};
 
-use impulse::interface_server::{Interface, InterfaceServer};
+use impulse::external_server::{External, ExternalServer};
 use impulse::{
     Empty, LaunchVmResponse, MicroVm, ShutdownVmResponse, SystemStatusResponse,
     SystemVersionResponse,
 };
 
 pub mod impulse {
-    include!("../../proto/impulse.interface.rs");
+    include!("../../proto/impulse.interface.v010.rs");
 }
 
 #[derive(Default)]
 pub struct Impulse {}
 
 #[tonic::async_trait]
-impl Interface for Impulse {
+impl External for Impulse {
     async fn system_status(
         &self,
         _request: Request<Empty>,
