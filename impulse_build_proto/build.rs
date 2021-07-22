@@ -1,31 +1,16 @@
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    runner()?;
-    interface()?;
+    build_proto("interface")?;
+    build_proto("runner")?;
     Ok(())
 }
 
-fn runner() -> Result<(), Box<dyn std::error::Error>> {
-    println!("cargo:rerun-if-changed=../proto/impulse/impulse_runner.proto");
-    tonic_build::configure()
-        .build_client(false)
-        .build_server(true)
-        .out_dir("../proto/")
-        .compile(
-            &["../proto/impulse/impulse_runner.proto"],
-            &["../proto/impulse"],
-        )?;
-    Ok(())
-}
-
-fn interface() -> Result<(), Box<dyn std::error::Error>> {
-    println!("cargo:rerun-if-changed=../proto/impulse/impulse_interface.proto");
+fn build_proto(name: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let proto_file = format!("../proto/impulse/impulse_{}.proto", name);
+    println!("cargo:rerun-if-changed={}", proto_file);
     tonic_build::configure()
         .build_client(false)
         .build_server(true)
         .out_dir("../proto")
-        .compile(
-            &["../proto/impulse/impulse_interface.proto"],
-            &["../proto/impulse"],
-        )?;
+        .compile(&[proto_file.as_str()], &["../proto/impulse"])?;
     Ok(())
 }
