@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package impulse.runner;
+
+service Runner {
+  rpc Connect (ConnectionRequest) returns (ConnectionResponse) {}
+  rpc Run (stream Tasks) returns (stream Tasks) {}
+  rpc Shutdown (ShutdownRequest) returns (ShutdownResponse) {}
+}
+
+message ConnectionRequest {
+  string node_id = 1;
+}
+
+message ConnectionResponse {
+  string server_id = 1;
+}
+
+message Tasks {
+  enum Task {
+    LAUNCH_VM = 0;
+    SHUTDOWN_VM = 1;
+  }
+  string task_id = 1;
+  string task_details = 2;
+  bool success = 3;
+}
+
+message ShutdownRequest {
+  string server_id = 1;
+}
+
+message ShutdownResponse {
+  string node_id = 1;
+}
