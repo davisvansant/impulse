@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package impulse;
+package impulse.interface;
 
 service Interface {
   rpc SystemStatus (Empty) returns (SystemStatusResponse) {}
