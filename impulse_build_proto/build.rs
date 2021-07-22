@@ -18,11 +18,14 @@ fn runner() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn interface() -> Result<(), Box<dyn std::error::Error>> {
-    println!("cargo:rerun-if-changed=../proto/impulse/impulse.proto");
+    println!("cargo:rerun-if-changed=../proto/impulse/impulse_interface.proto");
     tonic_build::configure()
         .build_client(false)
         .build_server(true)
         .out_dir("../proto")
-        .compile(&["../proto/impulse/impulse.proto"], &["../proto/impulse"])?;
+        .compile(
+            &["../proto/impulse/impulse_interface.proto"],
+            &["../proto/impulse"],
+        )?;
     Ok(())
 }
