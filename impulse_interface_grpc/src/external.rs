@@ -17,29 +17,67 @@ pub struct External {}
 impl Interface for External {
     async fn system_status(
         &self,
-        _request: Request<Empty>,
+        request: Request<Empty>,
     ) -> Result<Response<SystemStatusResponse>, Status> {
-        unimplemented!()
+        println!("{:?}", request);
+        let status = SystemStatusResponse {
+            status: String::from("its running!"),
+        };
+        let response = Response::new(status);
+        Ok(response)
     }
 
     async fn system_version(
         &self,
-        _request: Request<Empty>,
+        request: Request<Empty>,
     ) -> Result<Response<SystemVersionResponse>, Status> {
-        unimplemented!()
+        println!("{:?}", request);
+        let version = SystemVersionResponse {
+            version: String::from("v0.1.0"),
+        };
+        let response = Response::new(version);
+        Ok(response)
     }
 
     async fn launch_vm(
         &self,
-        _request: Request<MicroVm>,
+        request: Request<MicroVm>,
     ) -> Result<Response<LaunchVmResponse>, Status> {
-        unimplemented!()
+        match request.into_inner().name.as_str() {
+            "tester" => {
+                let launch_vm = LaunchVmResponse {
+                    launched: true,
+                    details: String::from("vm has started!"),
+                };
+                let response = Response::new(launch_vm);
+                Ok(response)
+            }
+            _ => {
+                let message = String::from("The requested VM was not found... please try again!");
+                let status = Status::new(tonic::Code::NotFound, message);
+                Err(status)
+            }
+        }
     }
 
     async fn shutdown_vm(
         &self,
-        _request: Request<MicroVm>,
+        request: Request<MicroVm>,
     ) -> Result<Response<ShutdownVmResponse>, Status> {
-        unimplemented!()
+        match request.into_inner().name.as_str() {
+            "tester" => {
+                let shutdown_vm = ShutdownVmResponse {
+                    shutdown: true,
+                    details: String::from("vm has been shutdown!"),
+                };
+                let response = Response::new(shutdown_vm);
+                Ok(response)
+            }
+            _ => {
+                let message = String::from("The requested VM was not found... please try again!");
+                let status = Status::new(tonic::Code::NotFound, message);
+                Err(status)
+            }
+        }
     }
 }
