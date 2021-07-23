@@ -15,4 +15,4 @@ steps:
       - cargo fmt -- --check
       - cargo clippy --all-targets --all-features
       - cargo check --workspace
-      - cargo test --workspace -- --test-threads=1
+      - cargo test --workspace
