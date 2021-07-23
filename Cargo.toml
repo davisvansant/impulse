@@ -3,6 +3,7 @@ members = [
   "impulse",
   "impulse_actuator",
   "impulse_build_proto",
+  "impulse_dependency_tokio",
   "impulse_interface",
   "impulse_interface_grpc",
 ]
