@@ -6,7 +6,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tokio = { version = "1.8.2", default-features = false, features = [ "fs", "process" ] }
+tokio = { path = "../impulse_dependency_tokio", package = "impulse_dependency_tokio", features = [ "fs", "process" ] }
 
 [dev-dependencies]
-tokio = { version = "1.8.2", default-features = false, features = [ "macros", "rt-multi-thread" ] }
+tokio = { path = "../impulse_dependency_tokio", package = "impulse_dependency_tokio", features = [ "macros", "rt-multi-thread" ] }
