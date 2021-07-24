@@ -4,7 +4,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let external_interface = impulse_interface_grpc::external::External::default();
     let internal_interface = impulse_interface_grpc::internal::Internal::default();
 
-    println!(": : i m p u l s e _ i n t e r f a c e > Launching system on {}", run_address);
+    println!(
+        ": : i m p u l s e _ i n t e r f a c e > Launching system on {}",
+        run_address,
+    );
 
     let ctrl_c = async move {
         println!(": : i m p u l s e _ i n t e r f a c e > Running...");
