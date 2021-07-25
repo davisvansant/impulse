@@ -5,14 +5,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let internal_interface = impulse_interface_grpc::internal::Internal::default();
 
     println!(
-        ": : i m p u l s e _ i n t e r f a c e > Launching system on {}",
+        ":: i m p u l s e _ i n t e r f a c e > Launching system on {}",
         run_address,
     );
 
     let ctrl_c = async move {
-        println!(": : i m p u l s e _ i n t e r f a c e > Running...");
+        println!(":: i m p u l s e _ i n t e r f a c e > Running...");
         tokio::signal::ctrl_c().await.unwrap();
-        println!(": : i m p u l s e _ i n t e r f a c e > Shutting down...");
+        println!(":: i m p u l s e _ i n t e r f a c e > Shutting down...");
     };
 
     impulse_interface_grpc::Server::builder()
