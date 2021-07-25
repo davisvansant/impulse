@@ -10,8 +10,20 @@ mod external_v010 {
     include!("../../proto/impulse.external.v010.rs");
 }
 
-#[derive(Default)]
-pub struct External {}
+// #[derive(Default)]
+pub struct External {
+    status: String,
+    version: String,
+}
+
+impl External {
+    pub async fn init() -> Result<External, Box<dyn std::error::Error>> {
+        let status = String::from("Running!");
+        let version = String::from("v0.1.0");
+
+        Ok(External { status, version })
+    }
+}
 
 #[tonic::async_trait]
 impl Interface for External {
@@ -21,7 +33,7 @@ impl Interface for External {
     ) -> Result<Response<SystemStatusResponse>, Status> {
         println!("{:?}", request);
         let status = SystemStatusResponse {
-            status: String::from("its running!"),
+            status: self.status.to_owned(),
         };
         let response = Response::new(status);
         Ok(response)
@@ -33,7 +45,7 @@ impl Interface for External {
     ) -> Result<Response<SystemVersionResponse>, Status> {
         println!("{:?}", request);
         let version = SystemVersionResponse {
-            version: String::from("v0.1.0"),
+            version: self.version.to_owned(),
         };
         let response = Response::new(version);
         Ok(response)
