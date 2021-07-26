@@ -1,7 +1,7 @@
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("cargo:rerun-if-changed=build.rs");
     build_proto("external", "v010", true, true)?;
-    build_proto("internal", "v010", false, true)?;
+    build_proto("internal", "v010", true, true)?;
     Ok(())
 }
 
