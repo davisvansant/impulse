@@ -3,16 +3,16 @@ syntax = "proto3";
 package impulse.internal.v010;
 
 service Interface {
-  rpc Connect (ConnectionRequest) returns (ConnectionResponse) {}
+  rpc Attach (AttachRequest) returns (AttachResponse) {}
   rpc Run (stream Tasks) returns (stream Tasks) {}
   rpc Shutdown (ShutdownRequest) returns (ShutdownResponse) {}
 }
 
-message ConnectionRequest {
+message AttachRequest {
   string node_id = 1;
 }
 
-message ConnectionResponse {
+message AttachResponse {
   string server_id = 1;
 }
 

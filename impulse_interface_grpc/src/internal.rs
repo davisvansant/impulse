@@ -6,9 +6,7 @@ use futures_core::Stream;
 use std::pin::Pin;
 
 pub use internal_v010::interface_server::{Interface, InterfaceServer};
-pub use internal_v010::{
-    ConnectionRequest, ConnectionResponse, ShutdownRequest, ShutdownResponse, Tasks,
-};
+pub use internal_v010::{AttachRequest, AttachResponse, ShutdownRequest, ShutdownResponse, Tasks};
 
 mod internal_v010 {
     include!("../../proto/impulse.internal.v010.rs");
@@ -19,10 +17,10 @@ pub struct Internal {}
 
 #[tonic::async_trait]
 impl Interface for Internal {
-    async fn connect(
+    async fn attach(
         &self,
-        _request: Request<ConnectionRequest>,
-    ) -> Result<Response<ConnectionResponse>, Status> {
+        _request: Request<AttachRequest>,
+    ) -> Result<Response<AttachResponse>, Status> {
         unimplemented!()
     }
 
