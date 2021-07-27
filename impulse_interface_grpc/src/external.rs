@@ -93,3 +93,16 @@ impl Interface for External {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn init() -> Result<(), Box<dyn std::error::Error>> {
+        let test_external = External::init().await?;
+        assert_eq!(test_external.status.as_str(), "Running!");
+        assert_eq!(test_external.version.as_str(), "v0.1.0");
+        Ok(())
+    }
+}
