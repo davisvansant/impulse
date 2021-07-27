@@ -90,7 +90,7 @@ impl Interface for Internal {
 mod tests {
     use super::*;
 
-    #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+    #[tokio::test(flavor = "multi_thread")]
     async fn init() -> Result<(), Box<dyn std::error::Error>> {
         let test_internal = Internal::init().await?;
         let test_nodes = test_internal.nodes.lock().unwrap();
