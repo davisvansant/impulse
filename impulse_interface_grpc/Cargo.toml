@@ -12,3 +12,6 @@ futures-core = "0.3.15"
 
 [build-dependencies]
 impulse_build_proto = { path = "../impulse_build_proto" }
+
+[dev-dependencies]
+tokio = { path = "../impulse_dependency_tokio", package = "impulse_dependency_tokio", features = [ "macros", "rt-multi-thread" ] }
