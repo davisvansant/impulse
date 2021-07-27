@@ -120,4 +120,19 @@ mod tests {
         );
         Ok(())
     }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn system_version() -> Result<(), Box<dyn std::error::Error>> {
+        let test_external = External::init().await?;
+        let test_request = Request::new(Empty {});
+        let test_response = Response::new(SystemVersionResponse {
+            version: String::from("v0.1.0"),
+        });
+        let test_external_system_version = test_external.system_version(test_request).await?;
+        assert_eq!(
+            test_external_system_version.into_inner().version.as_str(),
+            test_response.into_inner().version.as_str(),
+        );
+        Ok(())
+    }
 }
