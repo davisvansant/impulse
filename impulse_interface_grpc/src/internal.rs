@@ -99,4 +99,23 @@ mod tests {
         assert_eq!(test_nodes.capacity(), 20);
         Ok(())
     }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn attach() -> Result<(), Box<dyn std::error::Error>> {
+        let test_internal = Internal::init().await?;
+        let test_nodes = test_internal.nodes.lock().unwrap();
+        assert_eq!(test_nodes.len(), 0);
+        drop(test_nodes);
+        let test_request = Request::new(AttachRequest {
+            node_id: String::from("test_uuid"),
+        });
+        let test_internal_attach = test_internal.attach(test_request).await?;
+        assert_eq!(
+            test_internal_attach.get_ref().server_id.as_str(),
+            "some_uuid",
+        );
+        let test_nodes = test_internal.nodes.lock().unwrap();
+        assert_eq!(test_nodes.len(), 1);
+        Ok(())
+    }
 }
