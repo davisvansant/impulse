@@ -2,7 +2,7 @@
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let run_address = "[::1]:1284".parse().unwrap();
     let external_interface = impulse_interface_grpc::external::External::init().await?;
-    let internal_interface = impulse_interface_grpc::internal::Internal::default();
+    let internal_interface = impulse_interface_grpc::internal::Internal::init().await?;
 
     println!(
         ":: i m p u l s e _ i n t e r f a c e > Launching system on {}",
