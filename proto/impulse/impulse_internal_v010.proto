@@ -27,9 +27,9 @@ message Tasks {
 }
 
 message ShutdownRequest {
-  string server_id = 1;
+  string node_id = 1;
 }
 
 message ShutdownResponse {
-  string node_id = 1;
+  string system_id = 1;
 }
