@@ -118,4 +118,48 @@ mod tests {
         assert_eq!(test_nodes.len(), 1);
         Ok(())
     }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn shutdown_response() -> Result<(), Box<dyn std::error::Error>> {
+        let test_internal = Internal::init().await?;
+        let mut test_nodes = test_internal.nodes.lock().unwrap();
+        test_nodes.push(String::from("test_uuid"));
+        assert_eq!(test_nodes.len(), 1);
+        drop(test_nodes);
+        let test_request = Request::new(ShutdownRequest {
+            node_id: String::from("test_uuid"),
+        });
+        let test_internal_shutdown = test_internal.shutdown(test_request).await?;
+        assert_eq!(
+            test_internal_shutdown.get_ref().system_id.as_str(),
+            "node removed!",
+        );
+        let test_nodes = test_internal.nodes.lock().unwrap();
+        assert_eq!(test_nodes.len(), 0);
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn shutdown_status() -> Result<(), Box<dyn std::error::Error>> {
+        let test_internal = Internal::init().await?;
+        let mut test_nodes = test_internal.nodes.lock().unwrap();
+        test_nodes.push(String::from("test_uuid"));
+        assert_eq!(test_nodes.len(), 1);
+        drop(test_nodes);
+        let test_request = Request::new(ShutdownRequest {
+            node_id: String::from("not test_uuid"),
+        });
+        let test_internal_shutdown = test_internal.shutdown(test_request).await;
+        assert_eq!(
+            test_internal_shutdown.as_ref().unwrap_err().code(),
+            tonic::Code::NotFound,
+        );
+        assert_eq!(
+            test_internal_shutdown.as_ref().unwrap_err().message(),
+            "Node not test_uuid was not found... please try again!",
+        );
+        let test_nodes = test_internal.nodes.lock().unwrap();
+        assert_eq!(test_nodes.len(), 1);
+        Ok(())
+    }
 }
