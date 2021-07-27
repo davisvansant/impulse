@@ -105,4 +105,19 @@ mod tests {
         assert_eq!(test_external.version.as_str(), "v0.1.0");
         Ok(())
     }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn system_status() -> Result<(), Box<dyn std::error::Error>> {
+        let test_external = External::init().await?;
+        let test_request = Request::new(Empty {});
+        let test_response = Response::new(SystemStatusResponse {
+            status: String::from("Running!"),
+        });
+        let test_external_system_status = test_external.system_status(test_request).await?;
+        assert_eq!(
+            test_external_system_status.into_inner().status.as_str(),
+            test_response.into_inner().status.as_str(),
+        );
+        Ok(())
+    }
 }
