@@ -110,13 +110,10 @@ mod tests {
     async fn system_status() -> Result<(), Box<dyn std::error::Error>> {
         let test_external = External::init().await?;
         let test_request = Request::new(Empty {});
-        let test_response = Response::new(SystemStatusResponse {
-            status: String::from("Running!"),
-        });
         let test_external_system_status = test_external.system_status(test_request).await?;
         assert_eq!(
-            test_external_system_status.into_inner().status.as_str(),
-            test_response.into_inner().status.as_str(),
+            test_external_system_status.get_ref().status.as_str(),
+            "Running!",
         );
         Ok(())
     }
@@ -125,13 +122,10 @@ mod tests {
     async fn system_version() -> Result<(), Box<dyn std::error::Error>> {
         let test_external = External::init().await?;
         let test_request = Request::new(Empty {});
-        let test_response = Response::new(SystemVersionResponse {
-            version: String::from("v0.1.0"),
-        });
         let test_external_system_version = test_external.system_version(test_request).await?;
         assert_eq!(
-            test_external_system_version.into_inner().version.as_str(),
-            test_response.into_inner().version.as_str(),
+            test_external_system_version.get_ref().version.as_str(),
+            "v0.1.0",
         );
         Ok(())
     }
@@ -142,18 +136,11 @@ mod tests {
         let test_request = Request::new(MicroVm {
             name: String::from("tester"),
         });
-        let test_response = Response::new(LaunchVmResponse {
-            launched: true,
-            details: String::from("vm has started!"),
-        });
         let test_external_launch_vm = test_external.launch_vm(test_request).await?;
-        assert_eq!(
-            test_external_launch_vm.get_ref().launched,
-            test_response.get_ref().launched,
-        );
+        assert!(test_external_launch_vm.get_ref().launched);
         assert_eq!(
             test_external_launch_vm.get_ref().details.as_str(),
-            test_response.get_ref().details.as_str(),
+            "vm has started!"
         );
         Ok(())
     }
