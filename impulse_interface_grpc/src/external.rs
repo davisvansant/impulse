@@ -175,4 +175,37 @@ mod tests {
         );
         Ok(())
     }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn shutdown_vm_response() -> Result<(), Box<dyn std::error::Error>> {
+        let test_external = External::init().await?;
+        let test_request = Request::new(MicroVm {
+            name: String::from("tester"),
+        });
+        let test_external_shutdown_vm = test_external.shutdown_vm(test_request).await?;
+        assert!(test_external_shutdown_vm.get_ref().shutdown);
+        assert_eq!(
+            test_external_shutdown_vm.get_ref().details.as_str(),
+            "vm has been shutdown!",
+        );
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn shutdown_vm_status() -> Result<(), Box<dyn std::error::Error>> {
+        let test_external = External::init().await?;
+        let test_request = Request::new(MicroVm {
+            name: String::from("not tester"),
+        });
+        let test_external_shutdown_vm = test_external.shutdown_vm(test_request).await;
+        assert_eq!(
+            test_external_shutdown_vm.as_ref().unwrap_err().code(),
+            tonic::Code::NotFound,
+        );
+        assert_eq!(
+            test_external_shutdown_vm.as_ref().unwrap_err().message(),
+            "The requested VM was not found... please try again!",
+        );
+        Ok(())
+    }
 }
