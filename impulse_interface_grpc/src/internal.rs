@@ -56,9 +56,31 @@ impl Interface for Internal {
 
     async fn shutdown(
         &self,
-        _request: Request<ShutdownRequest>,
+        request: Request<ShutdownRequest>,
     ) -> Result<Response<ShutdownResponse>, Status> {
-        unimplemented!()
+        let mut nodes = self.nodes.lock().unwrap();
+        let node_id = request.into_inner().node_id;
+
+        match nodes.binary_search(&node_id) {
+            Ok(node) => {
+                let element = &nodes.get(node).unwrap();
+                println!("removing node... {}", element);
+                nodes.remove(node);
+                println!("node removed...");
+
+                let response = ShutdownResponse {
+                    system_id: String::from("node removed!"),
+                };
+
+                Ok(Response::new(response))
+            }
+            Err(error) => {
+                println!("{}", error);
+                let message = format!("Node {} was not found... please try again!", &node_id);
+                let status = Status::new(tonic::Code::NotFound, message);
+                Err(status)
+            }
+        }
     }
 }
 
