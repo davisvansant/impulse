@@ -16,14 +16,16 @@ mod internal_v010 {
 
 // #[derive(Default)]
 pub struct Internal {
+    system_id: String,
     nodes: Mutex<Vec<String>>,
 }
 
 impl Internal {
     pub async fn init() -> Result<Internal, Box<dyn std::error::Error>> {
+        let system_id = String::from("some_uuid");
         let nodes = Mutex::new(Vec::with_capacity(20));
 
-        Ok(Internal { nodes })
+        Ok(Internal { system_id, nodes })
     }
 }
 
@@ -39,7 +41,7 @@ impl Interface for Internal {
         nodes.push(node);
 
         let system_id = AttachResponse {
-            server_id: String::from("system_id"),
+            server_id: self.system_id.to_owned(),
         };
         let response = Response::new(system_id);
         Ok(response)
@@ -92,6 +94,7 @@ mod tests {
     async fn init() -> Result<(), Box<dyn std::error::Error>> {
         let test_internal = Internal::init().await?;
         let test_nodes = test_internal.nodes.lock().unwrap();
+        assert_eq!(test_internal.system_id.as_str(), "some_uuid");
         assert_eq!(test_nodes.len(), 0);
         assert_eq!(test_nodes.capacity(), 20);
         Ok(())
