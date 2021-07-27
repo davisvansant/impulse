@@ -135,4 +135,44 @@ mod tests {
         );
         Ok(())
     }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn launch_vm_response() -> Result<(), Box<dyn std::error::Error>> {
+        let test_external = External::init().await?;
+        let test_request = Request::new(MicroVm {
+            name: String::from("tester"),
+        });
+        let test_response = Response::new(LaunchVmResponse {
+            launched: true,
+            details: String::from("vm has started!"),
+        });
+        let test_external_launch_vm = test_external.launch_vm(test_request).await?;
+        assert_eq!(
+            test_external_launch_vm.get_ref().launched,
+            test_response.get_ref().launched,
+        );
+        assert_eq!(
+            test_external_launch_vm.get_ref().details.as_str(),
+            test_response.get_ref().details.as_str(),
+        );
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn launch_vm_status() -> Result<(), Box<dyn std::error::Error>> {
+        let test_external = External::init().await?;
+        let test_request = Request::new(MicroVm {
+            name: String::from("not tester"),
+        });
+        let test_external_launch_vm = test_external.launch_vm(test_request).await;
+        assert_eq!(
+            test_external_launch_vm.as_ref().unwrap_err().code(),
+            tonic::Code::NotFound,
+        );
+        assert_eq!(
+            test_external_launch_vm.as_ref().unwrap_err().message(),
+            "The requested VM was not found... please try again!",
+        );
+        Ok(())
+    }
 }
