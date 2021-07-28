@@ -3,17 +3,17 @@ syntax = "proto3";
 package impulse.internal.v010;
 
 service Interface {
-  rpc Attach (AttachRequest) returns (AttachResponse) {}
+  rpc Attach (NodeId) returns (SystemId) {}
   rpc Run (stream Tasks) returns (stream Tasks) {}
-  rpc Shutdown (ShutdownRequest) returns (ShutdownResponse) {}
+  rpc Shutdown (NodeId) returns (SystemId) {}
 }
 
-message AttachRequest {
+message NodeId {
   string node_id = 1;
 }
 
-message AttachResponse {
-  string server_id = 1;
+message SystemId {
+  string system_id = 1;
 }
 
 message Tasks {
@@ -24,20 +24,4 @@ message Tasks {
   string task_id = 1;
   string task_details = 2;
   bool success = 3;
-}
-
-message ShutdownRequest {
-  string node_id = 1;
-}
-
-message ShutdownResponse {
-  string system_id = 1;
-}
-
-message NodeID {
-  string node_id = 1;
-}
-
-message SystemID {
-  string system_id = 1;
 }
