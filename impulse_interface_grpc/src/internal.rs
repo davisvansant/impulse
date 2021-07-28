@@ -10,7 +10,7 @@ use std::sync::Mutex;
 use tokio_stream::wrappers::ReceiverStream;
 
 pub use internal_v010::interface_server::{Interface, InterfaceServer};
-pub use internal_v010::{AttachRequest, AttachResponse, ShutdownRequest, ShutdownResponse, Tasks};
+pub use internal_v010::{NodeId, SystemId, Tasks};
 
 mod internal_v010 {
     include!("../../proto/impulse.internal.v010.rs");
@@ -33,17 +33,14 @@ impl Internal {
 
 #[tonic::async_trait]
 impl Interface for Internal {
-    async fn attach(
-        &self,
-        request: Request<AttachRequest>,
-    ) -> Result<Response<AttachResponse>, Status> {
+    async fn attach(&self, request: Request<NodeId>) -> Result<Response<SystemId>, Status> {
         let mut nodes = self.nodes.lock().unwrap();
         let node = request.into_inner().node_id;
 
         nodes.push(node);
 
-        let system_id = AttachResponse {
-            server_id: self.system_id.to_owned(),
+        let system_id = SystemId {
+            system_id: self.system_id.to_owned(),
         };
         let response = Response::new(system_id);
         Ok(response)
@@ -70,10 +67,7 @@ impl Interface for Internal {
         Ok(Response::new(ReceiverStream::new(rx)))
     }
 
-    async fn shutdown(
-        &self,
-        request: Request<ShutdownRequest>,
-    ) -> Result<Response<ShutdownResponse>, Status> {
+    async fn shutdown(&self, request: Request<NodeId>) -> Result<Response<SystemId>, Status> {
         let mut nodes = self.nodes.lock().unwrap();
         let node_id = request.into_inner().node_id;
 
@@ -84,8 +78,8 @@ impl Interface for Internal {
                 nodes.remove(node);
                 println!("node removed...");
 
-                let response = ShutdownResponse {
-                    system_id: String::from("node removed!"),
+                let response = SystemId {
+                    system_id: self.system_id.to_owned(),
                 };
 
                 Ok(Response::new(response))
@@ -120,12 +114,12 @@ mod tests {
         let test_nodes = test_internal.nodes.lock().unwrap();
         assert_eq!(test_nodes.len(), 0);
         drop(test_nodes);
-        let test_request = Request::new(AttachRequest {
+        let test_request = Request::new(NodeId {
             node_id: String::from("test_uuid"),
         });
         let test_internal_attach = test_internal.attach(test_request).await?;
         assert_eq!(
-            test_internal_attach.get_ref().server_id.as_str(),
+            test_internal_attach.get_ref().system_id.as_str(),
             "some_uuid",
         );
         let test_nodes = test_internal.nodes.lock().unwrap();
@@ -140,13 +134,13 @@ mod tests {
         test_nodes.push(String::from("test_uuid"));
         assert_eq!(test_nodes.len(), 1);
         drop(test_nodes);
-        let test_request = Request::new(ShutdownRequest {
+        let test_request = Request::new(NodeId {
             node_id: String::from("test_uuid"),
         });
         let test_internal_shutdown = test_internal.shutdown(test_request).await?;
         assert_eq!(
             test_internal_shutdown.get_ref().system_id.as_str(),
-            "node removed!",
+            "some_uuid",
         );
         let test_nodes = test_internal.nodes.lock().unwrap();
         assert_eq!(test_nodes.len(), 0);
@@ -160,7 +154,7 @@ mod tests {
         test_nodes.push(String::from("test_uuid"));
         assert_eq!(test_nodes.len(), 1);
         drop(test_nodes);
-        let test_request = Request::new(ShutdownRequest {
+        let test_request = Request::new(NodeId {
             node_id: String::from("not test_uuid"),
         });
         let test_internal_shutdown = test_internal.shutdown(test_request).await;
