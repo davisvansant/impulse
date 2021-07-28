@@ -9,6 +9,9 @@ edition = "2018"
 tonic = "0.5.0"
 prost = "0.8.0"
 futures-core = "0.3.15"
+tokio-stream = "0.1.7"
+
+tokio = { path = "../impulse_dependency_tokio", package = "impulse_dependency_tokio", features = [ "sync" ] }
 
 [build-dependencies]
 impulse_build_proto = { path = "../impulse_build_proto" }
