@@ -33,3 +33,11 @@ message ShutdownRequest {
 message ShutdownResponse {
   string system_id = 1;
 }
+
+message NodeID {
+  string node_id = 1;
+}
+
+message SystemID {
+  string system_id = 1;
+}
