@@ -7,6 +7,8 @@ use std::pin::Pin;
 
 use std::sync::Mutex;
 
+use tokio_stream::wrappers::ReceiverStream;
+
 pub use internal_v010::interface_server::{Interface, InterfaceServer};
 pub use internal_v010::{AttachRequest, AttachResponse, ShutdownRequest, ShutdownResponse, Tasks};
 
@@ -47,13 +49,25 @@ impl Interface for Internal {
         Ok(response)
     }
 
-    type RunStream = Pin<Box<dyn Stream<Item = Result<Tasks, Status>> + Send + Sync>>;
+    type RunStream = ReceiverStream<Result<Tasks, Status>>;
 
     async fn run(
         &self,
-        _request: Request<Streaming<Tasks>>,
+        request: Request<Streaming<Tasks>>,
     ) -> Result<Response<Self::RunStream>, Status> {
-        unimplemented!()
+        println!("{:?}", request);
+
+        let (tx, rx) = tokio::sync::mpsc::channel(4);
+
+        match request.into_inner().message().await? {
+            Some(task) => {
+                println!("received... {:?}", task);
+                tx.send(Ok(task)).await.unwrap();
+            }
+            None => println!("no more"),
+        };
+
+        Ok(Response::new(ReceiverStream::new(rx)))
     }
 
     async fn shutdown(
