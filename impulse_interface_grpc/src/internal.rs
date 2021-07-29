@@ -49,40 +49,48 @@ impl Interface for Internal {
     ) -> Result<tonic::Response<Self::ControllerStream>, tonic::Status> {
         println!("{:?}", request);
 
-        let (tx, rx) = tokio::sync::mpsc::channel(4);
+        let nodes = self.nodes.lock().unwrap();
 
-        let task_one = Task {
-            action: 1,
-            id: String::from("1"),
-        };
-        let task_two = Task {
-            action: 2,
-            id: String::from("2"),
-        };
-        let task_three = Task {
-            action: 0,
-            id: String::from("3"),
-        };
-        let task_four = Task {
-            action: 1,
-            id: String::from("4"),
-        };
+        if nodes.contains(&request.get_ref().node_id) {
+            let (tx, rx) = tokio::sync::mpsc::channel(4);
 
-        tokio::spawn(async move {
-            println!("sending task one...");
-            tx.send(Ok(task_one)).await.unwrap();
+            let task_one = Task {
+                action: 1,
+                id: String::from("1"),
+            };
+            let task_two = Task {
+                action: 2,
+                id: String::from("2"),
+            };
+            let task_three = Task {
+                action: 0,
+                id: String::from("3"),
+            };
+            let task_four = Task {
+                action: 1,
+                id: String::from("4"),
+            };
 
-            println!("sending task two...");
-            tx.send(Ok(task_two)).await.unwrap();
+            tokio::spawn(async move {
+                println!("sending task one...");
+                tx.send(Ok(task_one)).await.unwrap();
 
-            println!("sending task three...");
-            tx.send(Ok(task_three)).await.unwrap();
+                println!("sending task two...");
+                tx.send(Ok(task_two)).await.unwrap();
 
-            println!("sending task four...");
-            tx.send(Ok(task_four)).await.unwrap();
-        });
+                println!("sending task three...");
+                tx.send(Ok(task_three)).await.unwrap();
 
-        Ok(Response::new(ReceiverStream::new(rx)))
+                println!("sending task four...");
+                tx.send(Ok(task_four)).await.unwrap();
+            });
+
+            Ok(Response::new(ReceiverStream::new(rx)))
+        } else {
+            let message = String::from("Node was not found... please register first!");
+            let status = Status::new(tonic::Code::NotFound, message);
+            Err(status)
+        }
     }
 
     async fn delist(&self, request: Request<NodeId>) -> Result<Response<SystemId>, Status> {
@@ -146,8 +154,11 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn controller() -> Result<(), Box<dyn std::error::Error>> {
+    async fn controller_response() -> Result<(), Box<dyn std::error::Error>> {
         let test_internal = Internal::init().await?;
+        let mut test_nodes = test_internal.nodes.lock().unwrap();
+        test_nodes.push(String::from("test_uuid"));
+        drop(test_nodes);
         let test_request = Request::new(NodeId {
             node_id: String::from("test_uuid"),
         });
@@ -162,6 +173,24 @@ mod tests {
                 _ => (),
             }
         }
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn controller_status() -> Result<(), Box<dyn std::error::Error>> {
+        let test_internal = Internal::init().await?;
+        let test_request = Request::new(NodeId {
+            node_id: String::from("test_uuid"),
+        });
+        let test_internal_controller = test_internal.controller(test_request).await;
+        assert_eq!(
+            test_internal_controller.as_ref().unwrap_err().code(),
+            tonic::Code::NotFound,
+        );
+        assert_eq!(
+            test_internal_controller.as_ref().unwrap_err().message(),
+            "Node was not found... please register first!",
+        );
         Ok(())
     }
 
