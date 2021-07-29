@@ -1,6 +1,9 @@
 use crate::{Request, Response, Status};
 
+use std::sync::Arc;
 use std::sync::Mutex;
+
+use tokio::sync::broadcast::Receiver;
 
 use tokio_stream::wrappers::ReceiverStream;
 
@@ -14,22 +17,30 @@ mod internal_v010 {
 // #[derive(Default)]
 pub struct Internal {
     system_id: String,
-    nodes: Mutex<Vec<String>>,
+    nodes: tokio::sync::Mutex<Vec<String>>,
+    receiver: Arc<tokio::sync::Mutex<Receiver<u8>>>,
 }
 
 impl Internal {
-    pub async fn init() -> Result<Internal, Box<dyn std::error::Error>> {
+    pub async fn init(receiver: Receiver<u8>) -> Result<Internal, Box<dyn std::error::Error>> {
         let system_id = String::from("some_uuid");
-        let nodes = Mutex::new(Vec::with_capacity(20));
+        let nodes = tokio::sync::Mutex::new(Vec::with_capacity(20));
 
-        Ok(Internal { system_id, nodes })
+        let receiver = Arc::new(tokio::sync::Mutex::new(receiver));
+
+        Ok(Internal {
+            system_id,
+            nodes,
+            receiver,
+        })
     }
 }
 
 #[tonic::async_trait]
 impl Interface for Internal {
     async fn register(&self, request: Request<NodeId>) -> Result<Response<SystemId>, Status> {
-        let mut nodes = self.nodes.lock().unwrap();
+        // let mut nodes = self.nodes.lock().unwrap();
+        let mut nodes = self.nodes.lock().await;
         let node = request.into_inner().node_id;
 
         nodes.push(node);
@@ -49,9 +60,16 @@ impl Interface for Internal {
     ) -> Result<tonic::Response<Self::ControllerStream>, tonic::Status> {
         println!("{:?}", request);
 
-        let nodes = self.nodes.lock().unwrap();
+        // let nodes = self.nodes.lock().unwrap();
+        let nodes = self.nodes.lock().await;
 
         if nodes.contains(&request.get_ref().node_id) {
+            let mut receiver = self.receiver.lock().await;
+
+            if let Ok(msg) = receiver.recv().await {
+                println!("Message received - {:?}", msg);
+            }
+
             let (tx, rx) = tokio::sync::mpsc::channel(4);
 
             let task_one = Task {
@@ -94,7 +112,8 @@ impl Interface for Internal {
     }
 
     async fn delist(&self, request: Request<NodeId>) -> Result<Response<SystemId>, Status> {
-        let mut nodes = self.nodes.lock().unwrap();
+        // let mut nodes = self.nodes.lock().unwrap();
+        let mut nodes = self.nodes.lock().await;
         let node_id = request.into_inner().node_id;
 
         match nodes.binary_search(&node_id) {
@@ -126,8 +145,9 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn init() -> Result<(), Box<dyn std::error::Error>> {
-        let test_internal = Internal::init().await?;
-        let test_nodes = test_internal.nodes.lock().unwrap();
+        let (_tx, test_rx) = tokio::sync::broadcast::channel(1);
+        let test_internal = Internal::init(test_rx).await?;
+        let test_nodes = test_internal.nodes.lock().await;
         assert_eq!(test_internal.system_id.as_str(), "some_uuid");
         assert_eq!(test_nodes.len(), 0);
         assert_eq!(test_nodes.capacity(), 20);
@@ -136,8 +156,9 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn register() -> Result<(), Box<dyn std::error::Error>> {
-        let test_internal = Internal::init().await?;
-        let test_nodes = test_internal.nodes.lock().unwrap();
+        let (_tx, test_rx) = tokio::sync::broadcast::channel(1);
+        let test_internal = Internal::init(test_rx).await?;
+        let test_nodes = test_internal.nodes.lock().await;
         assert_eq!(test_nodes.len(), 0);
         drop(test_nodes);
         let test_request = Request::new(NodeId {
@@ -148,20 +169,22 @@ mod tests {
             test_internal_register.get_ref().system_id.as_str(),
             "some_uuid",
         );
-        let test_nodes = test_internal.nodes.lock().unwrap();
+        let test_nodes = test_internal.nodes.lock().await;
         assert_eq!(test_nodes.len(), 1);
         Ok(())
     }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn controller_response() -> Result<(), Box<dyn std::error::Error>> {
-        let test_internal = Internal::init().await?;
-        let mut test_nodes = test_internal.nodes.lock().unwrap();
+        let (test_tx, test_rx) = tokio::sync::broadcast::channel(1);
+        let test_internal = Internal::init(test_rx).await?;
+        let mut test_nodes = test_internal.nodes.lock().await;
         test_nodes.push(String::from("test_uuid"));
         drop(test_nodes);
         let test_request = Request::new(NodeId {
             node_id: String::from("test_uuid"),
         });
+        test_tx.send(1).unwrap();
         let test_internal_controller = test_internal.controller(test_request).await?;
         let mut test_internal_controller_receiver = test_internal_controller.into_inner();
         while let Some(task) = test_internal_controller_receiver.as_mut().recv().await {
@@ -178,10 +201,12 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn controller_status() -> Result<(), Box<dyn std::error::Error>> {
-        let test_internal = Internal::init().await?;
+        let (test_tx, test_rx) = tokio::sync::broadcast::channel(1);
+        let test_internal = Internal::init(test_rx).await?;
         let test_request = Request::new(NodeId {
             node_id: String::from("test_uuid"),
         });
+        test_tx.send(1).unwrap();
         let test_internal_controller = test_internal.controller(test_request).await;
         assert_eq!(
             test_internal_controller.as_ref().unwrap_err().code(),
@@ -196,8 +221,9 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn delist_response() -> Result<(), Box<dyn std::error::Error>> {
-        let test_internal = Internal::init().await?;
-        let mut test_nodes = test_internal.nodes.lock().unwrap();
+        let (_tx, test_rx) = tokio::sync::broadcast::channel(1);
+        let test_internal = Internal::init(test_rx).await?;
+        let mut test_nodes = test_internal.nodes.lock().await;
         test_nodes.push(String::from("test_uuid"));
         assert_eq!(test_nodes.len(), 1);
         drop(test_nodes);
@@ -209,15 +235,16 @@ mod tests {
             test_internal_delist.get_ref().system_id.as_str(),
             "some_uuid",
         );
-        let test_nodes = test_internal.nodes.lock().unwrap();
+        let test_nodes = test_internal.nodes.lock().await;
         assert_eq!(test_nodes.len(), 0);
         Ok(())
     }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn delist_status() -> Result<(), Box<dyn std::error::Error>> {
-        let test_internal = Internal::init().await?;
-        let mut test_nodes = test_internal.nodes.lock().unwrap();
+        let (_tx, test_rx) = tokio::sync::broadcast::channel(1);
+        let test_internal = Internal::init(test_rx).await?;
+        let mut test_nodes = test_internal.nodes.lock().await;
         test_nodes.push(String::from("test_uuid"));
         assert_eq!(test_nodes.len(), 1);
         drop(test_nodes);
@@ -233,7 +260,7 @@ mod tests {
             test_internal_delist.as_ref().unwrap_err().message(),
             "Node not test_uuid was not found... please try again!",
         );
-        let test_nodes = test_internal.nodes.lock().unwrap();
+        let test_nodes = test_internal.nodes.lock().await;
         assert_eq!(test_nodes.len(), 1);
         Ok(())
     }
