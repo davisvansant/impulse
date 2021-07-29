@@ -3,9 +3,9 @@ syntax = "proto3";
 package impulse.internal.v010;
 
 service Interface {
-  rpc Attach (NodeId) returns (SystemId) {}
+  rpc Register (NodeId) returns (SystemId) {}
   rpc Controller (NodeId) returns (stream Task) {}
-  rpc Shutdown (NodeId) returns (SystemId) {}
+  rpc Delist (NodeId) returns (SystemId) {}
 }
 
 message NodeId {
