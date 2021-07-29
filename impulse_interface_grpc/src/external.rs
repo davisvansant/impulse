@@ -1,5 +1,7 @@
 use crate::{Request, Response, Status};
 
+use tokio::sync::broadcast::Sender;
+
 pub use external_v010::interface_server::{Interface, InterfaceServer};
 pub use external_v010::{
     Empty, LaunchVmResponse, MicroVm, ShutdownVmResponse, SystemStatusResponse,
@@ -14,14 +16,19 @@ mod external_v010 {
 pub struct External {
     status: String,
     version: String,
+    sender: Sender<u8>,
 }
 
 impl External {
-    pub async fn init() -> Result<External, Box<dyn std::error::Error>> {
+    pub async fn init(sender: Sender<u8>) -> Result<External, Box<dyn std::error::Error>> {
         let status = String::from("Running!");
         let version = String::from("v0.1.0");
 
-        Ok(External { status, version })
+        Ok(External {
+            status,
+            version,
+            sender,
+        })
     }
 }
 
@@ -57,6 +64,10 @@ impl Interface for External {
     ) -> Result<Response<LaunchVmResponse>, Status> {
         match request.into_inner().name.as_str() {
             "tester" => {
+                if let Ok(msg) = &self.sender.send(1) {
+                    println!("Message sent - {:?}", msg);
+                }
+
                 let launch_vm = LaunchVmResponse {
                     launched: true,
                     details: String::from("vm has started!"),
@@ -100,7 +111,8 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn init() -> Result<(), Box<dyn std::error::Error>> {
-        let test_external = External::init().await?;
+        let (test_tx, _rx) = tokio::sync::broadcast::channel(1);
+        let test_external = External::init(test_tx).await?;
         assert_eq!(test_external.status.as_str(), "Running!");
         assert_eq!(test_external.version.as_str(), "v0.1.0");
         Ok(())
@@ -108,7 +120,8 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn system_status() -> Result<(), Box<dyn std::error::Error>> {
-        let test_external = External::init().await?;
+        let (test_tx, _rx) = tokio::sync::broadcast::channel(1);
+        let test_external = External::init(test_tx).await?;
         let test_request = Request::new(Empty {});
         let test_external_system_status = test_external.system_status(test_request).await?;
         assert_eq!(
@@ -120,7 +133,8 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn system_version() -> Result<(), Box<dyn std::error::Error>> {
-        let test_external = External::init().await?;
+        let (test_tx, _rx) = tokio::sync::broadcast::channel(1);
+        let test_external = External::init(test_tx).await?;
         let test_request = Request::new(Empty {});
         let test_external_system_version = test_external.system_version(test_request).await?;
         assert_eq!(
@@ -132,7 +146,8 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn launch_vm_response() -> Result<(), Box<dyn std::error::Error>> {
-        let test_external = External::init().await?;
+        let (test_tx, _rx) = tokio::sync::broadcast::channel(1);
+        let test_external = External::init(test_tx).await?;
         let test_request = Request::new(MicroVm {
             name: String::from("tester"),
         });
@@ -147,7 +162,8 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn launch_vm_status() -> Result<(), Box<dyn std::error::Error>> {
-        let test_external = External::init().await?;
+        let (test_tx, _rx) = tokio::sync::broadcast::channel(1);
+        let test_external = External::init(test_tx).await?;
         let test_request = Request::new(MicroVm {
             name: String::from("not tester"),
         });
@@ -165,7 +181,8 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn shutdown_vm_response() -> Result<(), Box<dyn std::error::Error>> {
-        let test_external = External::init().await?;
+        let (test_tx, _rx) = tokio::sync::broadcast::channel(1);
+        let test_external = External::init(test_tx).await?;
         let test_request = Request::new(MicroVm {
             name: String::from("tester"),
         });
@@ -180,7 +197,8 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn shutdown_vm_status() -> Result<(), Box<dyn std::error::Error>> {
-        let test_external = External::init().await?;
+        let (test_tx, _rx) = tokio::sync::broadcast::channel(1);
+        let test_external = External::init(test_tx).await?;
         let test_request = Request::new(MicroVm {
             name: String::from("not tester"),
         });
