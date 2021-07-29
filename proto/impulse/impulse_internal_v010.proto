@@ -4,7 +4,7 @@ package impulse.internal.v010;
 
 service Interface {
   rpc Attach (NodeId) returns (SystemId) {}
-  rpc Run (stream Tasks) returns (stream Tasks) {}
+  rpc Controller (NodeId) returns (stream Task) {}
   rpc Shutdown (NodeId) returns (SystemId) {}
 }
 
@@ -16,12 +16,12 @@ message SystemId {
   string system_id = 1;
 }
 
-message Tasks {
-  enum Task {
-    LAUNCH_VM = 0;
-    SHUTDOWN_VM = 1;
+message Task {
+  enum Action {
+    ACTION_UNSPECIFIED = 0;
+    INSTANCE_START = 1;
+    SEND_CTRL_ALT_DEL = 2;
   }
-  string task_id = 1;
-  string task_details = 2;
-  bool success = 3;
+  Action action = 1;
+  string id = 2;
 }
