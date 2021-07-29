@@ -28,7 +28,7 @@ impl Internal {
 
 #[tonic::async_trait]
 impl Interface for Internal {
-    async fn attach(&self, request: Request<NodeId>) -> Result<Response<SystemId>, Status> {
+    async fn register(&self, request: Request<NodeId>) -> Result<Response<SystemId>, Status> {
         let mut nodes = self.nodes.lock().unwrap();
         let node = request.into_inner().node_id;
 
@@ -85,7 +85,7 @@ impl Interface for Internal {
         Ok(Response::new(ReceiverStream::new(rx)))
     }
 
-    async fn shutdown(&self, request: Request<NodeId>) -> Result<Response<SystemId>, Status> {
+    async fn delist(&self, request: Request<NodeId>) -> Result<Response<SystemId>, Status> {
         let mut nodes = self.nodes.lock().unwrap();
         let node_id = request.into_inner().node_id;
 
@@ -127,7 +127,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn attach() -> Result<(), Box<dyn std::error::Error>> {
+    async fn register() -> Result<(), Box<dyn std::error::Error>> {
         let test_internal = Internal::init().await?;
         let test_nodes = test_internal.nodes.lock().unwrap();
         assert_eq!(test_nodes.len(), 0);
@@ -135,9 +135,9 @@ mod tests {
         let test_request = Request::new(NodeId {
             node_id: String::from("test_uuid"),
         });
-        let test_internal_attach = test_internal.attach(test_request).await?;
+        let test_internal_register = test_internal.register(test_request).await?;
         assert_eq!(
-            test_internal_attach.get_ref().system_id.as_str(),
+            test_internal_register.get_ref().system_id.as_str(),
             "some_uuid",
         );
         let test_nodes = test_internal.nodes.lock().unwrap();
@@ -166,7 +166,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn shutdown_response() -> Result<(), Box<dyn std::error::Error>> {
+    async fn delist_response() -> Result<(), Box<dyn std::error::Error>> {
         let test_internal = Internal::init().await?;
         let mut test_nodes = test_internal.nodes.lock().unwrap();
         test_nodes.push(String::from("test_uuid"));
@@ -175,9 +175,9 @@ mod tests {
         let test_request = Request::new(NodeId {
             node_id: String::from("test_uuid"),
         });
-        let test_internal_shutdown = test_internal.shutdown(test_request).await?;
+        let test_internal_delist = test_internal.delist(test_request).await?;
         assert_eq!(
-            test_internal_shutdown.get_ref().system_id.as_str(),
+            test_internal_delist.get_ref().system_id.as_str(),
             "some_uuid",
         );
         let test_nodes = test_internal.nodes.lock().unwrap();
@@ -186,7 +186,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn shutdown_status() -> Result<(), Box<dyn std::error::Error>> {
+    async fn delist_status() -> Result<(), Box<dyn std::error::Error>> {
         let test_internal = Internal::init().await?;
         let mut test_nodes = test_internal.nodes.lock().unwrap();
         test_nodes.push(String::from("test_uuid"));
@@ -195,13 +195,13 @@ mod tests {
         let test_request = Request::new(NodeId {
             node_id: String::from("not test_uuid"),
         });
-        let test_internal_shutdown = test_internal.shutdown(test_request).await;
+        let test_internal_delist = test_internal.delist(test_request).await;
         assert_eq!(
-            test_internal_shutdown.as_ref().unwrap_err().code(),
+            test_internal_delist.as_ref().unwrap_err().code(),
             tonic::Code::NotFound,
         );
         assert_eq!(
-            test_internal_shutdown.as_ref().unwrap_err().message(),
+            test_internal_delist.as_ref().unwrap_err().message(),
             "Node not test_uuid was not found... please try again!",
         );
         let test_nodes = test_internal.nodes.lock().unwrap();
