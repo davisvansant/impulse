@@ -3,7 +3,8 @@ use crate::{Request, Response, Status};
 use std::sync::Arc;
 use std::sync::Mutex;
 
-use tokio::sync::broadcast::Receiver;
+use tokio::sync::broadcast::{Receiver, Sender};
+// use tokio::sync::mpsc::{Receiver, Sender};
 
 use tokio_stream::wrappers::ReceiverStream;
 
@@ -64,43 +65,41 @@ impl Interface for Internal {
         let nodes = self.nodes.lock().await;
 
         if nodes.contains(&request.get_ref().node_id) {
-            let mut receiver = self.receiver.lock().await;
-
-            if let Ok(msg) = receiver.recv().await {
-                println!("Message received - {:?}", msg);
-            }
-
-            let (tx, rx) = tokio::sync::mpsc::channel(4);
-
-            let task_one = Task {
-                action: 1,
-                id: String::from("1"),
-            };
-            let task_two = Task {
-                action: 2,
-                id: String::from("2"),
-            };
-            let task_three = Task {
-                action: 0,
-                id: String::from("3"),
-            };
-            let task_four = Task {
-                action: 1,
-                id: String::from("4"),
-            };
+            let (tx, mut rx) = tokio::sync::mpsc::channel(4);
+            let mut receiver = self.receiver.clone().lock_owned().await;
 
             tokio::spawn(async move {
-                println!("sending task one...");
-                tx.send(Ok(task_one)).await.unwrap();
+                if let Ok(msg) = receiver.recv().await {
+                    println!("Message received - {:?}", msg);
+                    let task_one = Task {
+                        action: 1,
+                        id: String::from("1"),
+                    };
+                    let task_two = Task {
+                        action: 2,
+                        id: String::from("2"),
+                    };
+                    let task_three = Task {
+                        action: 0,
+                        id: String::from("3"),
+                    };
+                    let task_four = Task {
+                        action: 1,
+                        id: String::from("4"),
+                    };
 
-                println!("sending task two...");
-                tx.send(Ok(task_two)).await.unwrap();
+                    println!("sending task one...");
+                    tx.send(Ok(task_one)).await.unwrap();
 
-                println!("sending task three...");
-                tx.send(Ok(task_three)).await.unwrap();
+                    println!("sending task two...");
+                    tx.send(Ok(task_two)).await.unwrap();
 
-                println!("sending task four...");
-                tx.send(Ok(task_four)).await.unwrap();
+                    println!("sending task three...");
+                    tx.send(Ok(task_three)).await.unwrap();
+
+                    println!("sending task four...");
+                    tx.send(Ok(task_four)).await.unwrap();
+                }
             });
 
             Ok(Response::new(ReceiverStream::new(rx)))
