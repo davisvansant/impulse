@@ -4,6 +4,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // let external_interface = impulse_interface_grpc::external::External::init().await?;
     // let internal_interface = impulse_interface_grpc::internal::Internal::init().await?;
     let (tx, rx) = tokio::sync::broadcast::channel(1);
+    // let (tx, rx) = tokio::sync::mpsc::channel(1);
 
     let external_interface = impulse_interface_grpc::external::External::init(tx).await?;
     let internal_interface = impulse_interface_grpc::internal::Internal::init(rx).await?;
