@@ -61,8 +61,7 @@ impl Interface for Internal {
             let mut receiver = self.sender_clone.subscribe();
 
             tokio::spawn(async move {
-                if let Ok(msg) = receiver.recv().await {
-                    // while let Ok(msg) = receiver.recv().await {
+                while let Ok(msg) = receiver.recv().await {
                     println!("Message received - {:?}", msg);
                     let task_one = Task {
                         action: 1,
@@ -179,6 +178,7 @@ mod tests {
         let test_internal_controller = test_internal.controller(test_request).await?;
         test_tx.send(1).unwrap();
         drop(test_tx);
+        drop(test_internal);
         let mut test_internal_controller_receiver = test_internal_controller.into_inner();
         while let Some(task) = test_internal_controller_receiver.as_mut().recv().await {
             match task.as_ref().unwrap().id.as_str() {
