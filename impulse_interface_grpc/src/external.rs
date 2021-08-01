@@ -1,7 +1,6 @@
 use crate::{Request, Response, Status};
 
 use tokio::sync::broadcast::Sender;
-// use tokio::sync::mpsc::Sender;
 
 pub use external_v010::interface_server::{Interface, InterfaceServer};
 pub use external_v010::{
@@ -65,7 +64,6 @@ impl Interface for External {
     ) -> Result<Response<LaunchVmResponse>, Status> {
         match request.into_inner().name.as_str() {
             "tester" => {
-                // if let Ok(msg) = &self.sender.send(1).await {
                 println!("{:?}", &self.sender.receiver_count());
                 if let Ok(msg) = &self.sender.send(1) {
                     println!("Message sent - {:?}", msg);

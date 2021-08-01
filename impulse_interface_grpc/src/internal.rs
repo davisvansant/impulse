@@ -1,10 +1,6 @@
 use crate::{Request, Response, Status};
 
-use std::sync::Arc;
-use std::sync::Mutex;
-
-use tokio::sync::broadcast::{Receiver, Sender};
-// use tokio::sync::mpsc::{Receiver, Sender};
+use tokio::sync::broadcast::Sender;
 
 use tokio_stream::wrappers::ReceiverStream;
 
@@ -19,22 +15,17 @@ mod internal_v010 {
 pub struct Internal {
     system_id: String,
     nodes: tokio::sync::Mutex<Vec<String>>,
-    // receiver: Arc<tokio::sync::Mutex<Receiver<u8>>>,
     sender_clone: Sender<u8>,
 }
 
 impl Internal {
-    // pub async fn init(receiver: Receiver<u8>) -> Result<Internal, Box<dyn std::error::Error>> {
     pub async fn init(sender_clone: Sender<u8>) -> Result<Internal, Box<dyn std::error::Error>> {
         let system_id = String::from("some_uuid");
         let nodes = tokio::sync::Mutex::new(Vec::with_capacity(20));
 
-        // let receiver = Arc::new(tokio::sync::Mutex::new(receiver));
-
         Ok(Internal {
             system_id,
             nodes,
-            // receiver,
             sender_clone,
         })
     }
@@ -43,7 +34,6 @@ impl Internal {
 #[tonic::async_trait]
 impl Interface for Internal {
     async fn register(&self, request: Request<NodeId>) -> Result<Response<SystemId>, Status> {
-        // let mut nodes = self.nodes.lock().unwrap();
         let mut nodes = self.nodes.lock().await;
         let node = request.into_inner().node_id;
 
@@ -64,12 +54,10 @@ impl Interface for Internal {
     ) -> Result<tonic::Response<Self::ControllerStream>, tonic::Status> {
         println!("{:?}", request);
 
-        // let nodes = self.nodes.lock().unwrap();
         let nodes = self.nodes.lock().await;
 
         if nodes.contains(&request.get_ref().node_id) {
             let (tx, rx) = tokio::sync::mpsc::channel(4);
-            // let mut receiver = self.receiver.clone().lock_owned().await;
             let mut receiver = self.sender_clone.subscribe();
 
             tokio::spawn(async move {
@@ -116,7 +104,6 @@ impl Interface for Internal {
     }
 
     async fn delist(&self, request: Request<NodeId>) -> Result<Response<SystemId>, Status> {
-        // let mut nodes = self.nodes.lock().unwrap();
         let mut nodes = self.nodes.lock().await;
         let node_id = request.into_inner().node_id;
 
@@ -189,7 +176,6 @@ mod tests {
         let test_request = Request::new(NodeId {
             node_id: String::from("test_uuid"),
         });
-        // test_tx.send(1).unwrap();
         let test_internal_controller = test_internal.controller(test_request).await?;
         test_tx.send(1).unwrap();
         drop(test_tx);
