@@ -90,6 +90,11 @@ impl Interface for External {
     ) -> Result<Response<ShutdownVmResponse>, Status> {
         match request.into_inner().name.as_str() {
             "tester" => {
+                println!("{:?}", &self.sender.receiver_count());
+                if let Ok(msg) = &self.sender.send(2) {
+                    println!("Message sent - {:?}", msg);
+                }
+
                 let shutdown_vm = ShutdownVmResponse {
                     shutdown: true,
                     details: String::from("vm has been shutdown!"),
