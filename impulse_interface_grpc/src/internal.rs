@@ -63,34 +63,25 @@ impl Interface for Internal {
             tokio::spawn(async move {
                 while let Ok(msg) = receiver.recv().await {
                     println!("Message received - {:?}", msg);
-                    let task_one = Task {
-                        action: 1,
-                        id: String::from("1"),
-                    };
-                    let task_two = Task {
-                        action: 2,
-                        id: String::from("2"),
-                    };
-                    let task_three = Task {
-                        action: 0,
-                        id: String::from("3"),
-                    };
-                    let task_four = Task {
-                        action: 1,
-                        id: String::from("4"),
-                    };
-
-                    println!("sending task one...");
-                    tx.send(Ok(task_one)).await.unwrap();
-
-                    println!("sending task two...");
-                    tx.send(Ok(task_two)).await.unwrap();
-
-                    println!("sending task three...");
-                    tx.send(Ok(task_three)).await.unwrap();
-
-                    println!("sending task four...");
-                    tx.send(Ok(task_four)).await.unwrap();
+                    match msg {
+                        1 => {
+                            println!("Start instance! {:?}", &msg);
+                            let task = Task {
+                                action: 1,
+                                id: String::from("some_task_uuid"),
+                            };
+                            tx.send(Ok(task)).await.unwrap();
+                        }
+                        2 => {
+                            println!("Shutdown instance! {:?}", &msg);
+                            let task = Task {
+                                action: 2,
+                                id: String::from("some_task_uuid"),
+                            };
+                            tx.send(Ok(task)).await.unwrap();
+                        }
+                        _ => (),
+                    }
                 }
             });
 
@@ -184,8 +175,6 @@ mod tests {
             match task.as_ref().unwrap().id.as_str() {
                 "1" => assert_eq!(task.unwrap().action, 1),
                 "2" => assert_eq!(task.unwrap().action, 2),
-                "3" => assert_eq!(task.unwrap().action, 0),
-                "4" => assert_eq!(task.unwrap().action, 1),
                 _ => (),
             }
         }
