@@ -5,8 +5,7 @@ members = [
   "deps/impulse_tonic",
   "impulse",
   "impulse_actuator",
-  "impulse_actuator_internal",
   "impulse_build_proto",
   "impulse_interface",
-  "impulse_interface_grpc",
+  "impulse_interface_grpc"
 ]
