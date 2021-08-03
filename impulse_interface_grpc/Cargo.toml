@@ -13,7 +13,7 @@ tonic = { path = "../deps/impulse_tonic", package = "impulse_tonic" }
 tokio = { path = "../deps/impulse_tokio", package = "impulse_tokio", features = [ "sync" ] }
 
 [build-dependencies]
-impulse_build_proto = { path = "../impulse_build_proto" }
+impulse_proto = { path = "../builds/impulse_proto" }
 
 [dev-dependencies]
 tokio = { path = "../deps/impulse_tokio", package = "impulse_tokio", features = [ "macros", "rt-multi-thread" ] }
