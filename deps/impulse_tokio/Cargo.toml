@@ -1,5 +1,5 @@
 [package]
-name = "impulse_dependency_tokio"
+name = "impulse_tokio"
 version = "0.1.0"
 edition = "2018"
 

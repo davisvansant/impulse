@@ -1,9 +1,12 @@
 [workspace]
 members = [
+  "deps/impulse_prost",
+  "deps/impulse_tokio",
+  "deps/impulse_tonic",
   "impulse",
   "impulse_actuator",
+  "impulse_actuator_internal",
   "impulse_build_proto",
-  "impulse_dependency_tokio",
   "impulse_interface",
   "impulse_interface_grpc",
 ]
