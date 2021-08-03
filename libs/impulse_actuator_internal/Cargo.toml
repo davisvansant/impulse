@@ -1,0 +1,17 @@
+[package]
+name = "impulse_actuator_internal"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+prost = { path = "../../deps/impulse_prost", package = "impulse_prost" }
+tonic = { path = "../../deps/impulse_tonic", package = "impulse_tonic" }
+
+[build-dependencies]
+impulse_proto = { path = "../../builds/impulse_proto" }
+
+[dev-dependencies]
+tokio = { path = "../../deps/impulse_tokio", package = "impulse_tokio", features = [ "macros", "rt-multi-thread" ] }
+impulse_interface_grpc = { path = "../../impulse_interface_grpc" }
