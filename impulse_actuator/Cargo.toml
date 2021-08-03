@@ -7,7 +7,4 @@ edition = "2018"
 
 [dependencies]
 impulse_actuator_internal = { path = "../libs/impulse_actuator_internal" }
-tokio = { path = "../deps/impulse_tokio", package = "impulse_tokio", features = [ "fs", "macros", "process", "rt-multi-thread" ] }
-
-[dev-dependencies]
 tokio = { path = "../deps/impulse_tokio", package = "impulse_tokio", features = [ "macros", "rt-multi-thread" ] }
