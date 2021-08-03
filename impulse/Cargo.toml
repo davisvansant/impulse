@@ -10,4 +10,4 @@ impulse_actuator = { path = "../impulse_actuator" }
 impulse_interface = { path = "../impulse_interface" }
 
 clap = { version = "2.33.3", default-features = false }
-tokio = { path = "../impulse_dependency_tokio", package = "impulse_dependency_tokio", features = [ "macros", "rt-multi-thread" ] }
+tokio = { path = "../deps/impulse_tokio", package = "impulse_tokio", features = [ "macros", "rt-multi-thread" ] }

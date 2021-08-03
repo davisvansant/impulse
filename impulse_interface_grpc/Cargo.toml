@@ -6,14 +6,14 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tonic = "0.5.0"
-prost = "0.8.0"
 tokio-stream = "0.1.7"
 
-tokio = { path = "../impulse_dependency_tokio", package = "impulse_dependency_tokio", features = [ "sync" ] }
+prost = { path = "../deps/impulse_prost", package = "impulse_prost" }
+tonic = { path = "../deps/impulse_tonic", package = "impulse_tonic" }
+tokio = { path = "../deps/impulse_tokio", package = "impulse_tokio", features = [ "sync" ] }
 
 [build-dependencies]
 impulse_build_proto = { path = "../impulse_build_proto" }
 
 [dev-dependencies]
-tokio = { path = "../impulse_dependency_tokio", package = "impulse_dependency_tokio", features = [ "macros", "rt-multi-thread" ] }
+tokio = { path = "../deps/impulse_tokio", package = "impulse_tokio", features = [ "macros", "rt-multi-thread" ] }
