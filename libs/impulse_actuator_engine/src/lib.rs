@@ -4,7 +4,7 @@ use std::process::Stdio;
 use tokio::fs;
 use tokio::process::Command;
 
-pub struct Actuator {
+pub struct Engine {
     pub firecracker_binary: PathBuf,
     pub jailer_binary: PathBuf,
     pub config_base: PathBuf,
@@ -13,8 +13,8 @@ pub struct Actuator {
     pub active: bool,
 }
 
-impl Actuator {
-    pub async fn init() -> Result<Actuator, Box<dyn std::error::Error>> {
+impl Engine {
+    pub async fn init() -> Result<Engine, Box<dyn std::error::Error>> {
         let firecracker_binary = PathBuf::from("/usr/bin/firecracker");
         let jailer_binary = PathBuf::from("/usr/bin/jailer");
 
@@ -26,7 +26,7 @@ impl Actuator {
 
         let running_pids = Vec::with_capacity(20);
 
-        Ok(Actuator {
+        Ok(Engine {
             firecracker_binary,
             jailer_binary,
             config_base,
@@ -84,60 +84,60 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
     async fn init() -> Result<(), Box<dyn std::error::Error>> {
-        let test_actuator = Actuator::init().await?;
+        let test_engine = Engine::init().await?;
         assert_eq!(
-            test_actuator.firecracker_binary.to_str().unwrap(),
+            test_engine.firecracker_binary.to_str().unwrap(),
             "/usr/bin/firecracker",
         );
-        let test_actuator_fircracker_binary_metadata =
-            fs::metadata(&test_actuator.firecracker_binary).await;
-        assert!(test_actuator_fircracker_binary_metadata.is_err());
+        let test_engine_fircracker_binary_metadata =
+            fs::metadata(&test_engine.firecracker_binary).await;
+        assert!(test_engine_fircracker_binary_metadata.is_err());
         assert_eq!(
-            test_actuator.jailer_binary.to_str().unwrap(),
+            test_engine.jailer_binary.to_str().unwrap(),
             "/usr/bin/jailer",
         );
-        let test_actuator_jailer_binary_metadata = fs::metadata(&test_actuator.jailer_binary).await;
-        assert!(test_actuator_jailer_binary_metadata.is_err());
+        let test_engine_jailer_binary_metadata = fs::metadata(&test_engine.jailer_binary).await;
+        assert!(test_engine_jailer_binary_metadata.is_err());
         assert_eq!(
-            test_actuator.config_base.to_str().unwrap(),
+            test_engine.config_base.to_str().unwrap(),
             "/var/lib/impulse/machine"
         );
-        let test_actuator_config_base_metadata = fs::metadata(&test_actuator.config_base).await?;
-        assert!(test_actuator_config_base_metadata.is_dir());
+        let test_engine_config_base_metadata = fs::metadata(&test_engine.config_base).await?;
+        assert!(test_engine_config_base_metadata.is_dir());
         assert_eq!(
-            test_actuator.socket_base.to_str().unwrap(),
+            test_engine.socket_base.to_str().unwrap(),
             "/tmp/impulse/socket",
         );
-        let test_actuator_socket_base_metadata = fs::metadata(&test_actuator.socket_base).await?;
-        assert!(test_actuator_socket_base_metadata.is_dir());
-        assert!(test_actuator.running_pids.is_empty());
-        assert!(test_actuator.active);
+        let test_engine_socket_base_metadata = fs::metadata(&test_engine.socket_base).await?;
+        assert!(test_engine_socket_base_metadata.is_dir());
+        assert!(test_engine.running_pids.is_empty());
+        assert!(test_engine.active);
         Ok(())
     }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn launch_vm() -> Result<(), Box<dyn std::error::Error>> {
-        let mut test_actuator = Actuator::init().await?;
-        let test_actuator_boot = test_actuator.launch_vm().await;
-        assert!(test_actuator_boot.is_err());
-        assert!(test_actuator.running_pids.is_empty());
+        let mut test_engine = Engine::init().await?;
+        let test_engine_boot = test_engine.launch_vm().await;
+        assert!(test_engine_boot.is_err());
+        assert!(test_engine.running_pids.is_empty());
         Ok(())
     }
 
     #[tokio::test(flavor = "multi_thread")]
     #[should_panic]
     async fn shutdown_vm() {
-        let mut test_actuator = Actuator::init().await.unwrap();
-        let test_actuator_shutdown_vm = test_actuator.shutdown_vm().await;
-        assert!(test_actuator_shutdown_vm.is_err());
+        let mut test_engine = Engine::init().await.unwrap();
+        let test_engine_shutdown_vm = test_engine.shutdown_vm().await;
+        assert!(test_engine_shutdown_vm.is_err());
     }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn shutdown() -> Result<(), Box<dyn std::error::Error>> {
-        let mut test_actuator = Actuator::init().await?;
-        assert!(test_actuator.active);
-        test_actuator.shutdown().await?;
-        assert!(!test_actuator.active);
+        let mut test_engine = Engine::init().await?;
+        assert!(test_engine.active);
+        test_engine.shutdown().await?;
+        assert!(!test_engine.active);
         Ok(())
     }
 }
