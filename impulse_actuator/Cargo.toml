@@ -6,10 +6,8 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-impulse_interface_grpc = { path = "../impulse_interface_grpc" }
+impulse_actuator_internal = { path = "../libs/impulse_actuator_internal" }
 tokio = { path = "../deps/impulse_tokio", package = "impulse_tokio", features = [ "fs", "macros", "process", "rt-multi-thread" ] }
-tonic = "0.5.0"
-prost = "0.8.0"
 
 [dev-dependencies]
 tokio = { path = "../deps/impulse_tokio", package = "impulse_tokio", features = [ "macros", "rt-multi-thread" ] }
