@@ -3,7 +3,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let run_address = "[::1]:1284".parse().unwrap();
     let (tx, _) = tokio::sync::broadcast::channel(1);
     let sender_clone = tx.clone();
-    let external_interface = impulse_interface_grpc::external::External::init(tx).await?;
+    let external_interface = impulse_interface_external::External::init(tx).await?;
     let internal_interface = impulse_interface_internal::Internal::init(sender_clone).await?;
 
     println!(
@@ -17,8 +17,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!(":: i m p u l s e _ i n t e r f a c e > Shutting down...");
     };
 
-    impulse_interface_grpc::Server::builder()
-        .add_service(impulse_interface_grpc::external::InterfaceServer::new(
+    tonic::transport::Server::builder()
+        .add_service(impulse_interface_external::InterfaceServer::new(
             external_interface,
         ))
         .add_service(impulse_interface_internal::InterfaceServer::new(
