@@ -6,9 +6,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     //     println!(":: i m p u l s e _ a c t u a t o r > Shutting down...");
     // });
 
-    // let actuator = Actuator::init().await?;
     let endpoint = "http://[::1]:1284";
     let mut internal_client = impulse_actuator_internal::Internal::init(endpoint).await?;
+    let mut engine = impulse_actuator_engine::Engine::init().await?;
 
     internal_client.register().await?;
 
@@ -18,11 +18,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         match task.action {
             1 => {
                 println!("start a vm {:?}", task);
-                // actuator.start_vm().await?;
+                engine.launch_vm().await?;
             }
             2 => {
                 println!("shutdown a vm {:?}", task);
-                // actuator.shutdown_vm().await?;
+                engine.shutdown_vm().await?;
             }
             _ => (),
         }
