@@ -7,6 +7,7 @@ members = [
   "impulse",
   "impulse_actuator",
   "impulse_interface",
+  "libs/impulse_actuator_engine",
   "libs/impulse_actuator_internal",
   "libs/impulse_interface_external",
   "libs/impulse_interface_internal",
