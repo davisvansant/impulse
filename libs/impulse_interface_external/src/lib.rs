@@ -1,4 +1,4 @@
-use crate::{Request, Response, Status};
+use tonic::{Request, Response, Status};
 
 use tokio::sync::broadcast::Sender;
 
@@ -9,7 +9,7 @@ pub use external_v010::{
 };
 
 mod external_v010 {
-    include!("../../proto/impulse.external.v010.rs");
+    include!("../../../proto/impulse.external.v010.rs");
 }
 
 // #[derive(Default)]
