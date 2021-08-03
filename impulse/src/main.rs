@@ -1,5 +1,5 @@
-use impulse_actuator::Actuator;
-use impulse_interface::Interface;
+// use impulse_actuator::Actuator;
+// use impulse_interface::Interface;
 
 use clap::{App, SubCommand};
 
@@ -28,8 +28,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some("start") => {
             println!("do starty things");
 
-            Actuator::init().await?;
-            Interface::init().await?;
+            // Actuator::init().await?;
+            // Interface::init().await?;
         }
         Some("shutdown") => println!("do shutdowny things"),
         _ => println!("{}", impulse.usage()),
