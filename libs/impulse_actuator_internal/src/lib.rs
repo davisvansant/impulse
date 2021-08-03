@@ -99,11 +99,11 @@ mod tests {
             let test_interface_endpoint = std::net::SocketAddr::from_str(TEST_ADDR).unwrap();
             let test_sender_clone = test_tx.clone();
             let test_interface_internal =
-                impulse_interface_grpc::internal::Internal::init(test_sender_clone)
+                impulse_interface_internal::Internal::init(test_sender_clone)
                     .await
                     .unwrap();
-            impulse_interface_grpc::Server::builder()
-                .add_service(impulse_interface_grpc::internal::InterfaceServer::new(
+            tonic::transport::Server::builder()
+                .add_service(impulse_interface_internal::InterfaceServer::new(
                     test_interface_internal,
                 ))
                 .serve(test_interface_endpoint)
@@ -122,11 +122,11 @@ mod tests {
             let test_interface_endpoint = std::net::SocketAddr::from_str(TEST_ADDR).unwrap();
             let test_sender_clone = test_tx.clone();
             let test_interface_internal =
-                impulse_interface_grpc::internal::Internal::init(test_sender_clone)
+                impulse_interface_internal::Internal::init(test_sender_clone)
                     .await
                     .unwrap();
-            impulse_interface_grpc::Server::builder()
-                .add_service(impulse_interface_grpc::internal::InterfaceServer::new(
+            tonic::transport::Server::builder()
+                .add_service(impulse_interface_internal::InterfaceServer::new(
                     test_interface_internal,
                 ))
                 .serve(test_interface_endpoint)
@@ -146,11 +146,11 @@ mod tests {
             let test_interface_endpoint = std::net::SocketAddr::from_str(TEST_ADDR).unwrap();
             let test_sender_clone = test_tx.clone();
             let test_interface_internal =
-                impulse_interface_grpc::internal::Internal::init(test_sender_clone)
+                impulse_interface_internal::Internal::init(test_sender_clone)
                     .await
                     .unwrap();
-            impulse_interface_grpc::Server::builder()
-                .add_service(impulse_interface_grpc::internal::InterfaceServer::new(
+            tonic::transport::Server::builder()
+                .add_service(impulse_interface_internal::InterfaceServer::new(
                     test_interface_internal,
                 ))
                 .serve(test_interface_endpoint)
