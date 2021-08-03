@@ -1,5 +1,5 @@
 [package]
-name = "impulse_build_proto"
+name = "impulse_proto"
 version = "0.1.0"
 edition = "2018"
 

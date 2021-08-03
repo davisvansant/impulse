@@ -1,11 +1,11 @@
 [workspace]
 members = [
+  "builds/impulse_proto",
   "deps/impulse_prost",
   "deps/impulse_tokio",
   "deps/impulse_tonic",
   "impulse",
   "impulse_actuator",
-  "impulse_build_proto",
   "impulse_interface",
   "impulse_interface_grpc"
 ]
