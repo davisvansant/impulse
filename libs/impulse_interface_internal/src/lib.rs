@@ -1,4 +1,4 @@
-use crate::{Request, Response, Status};
+use tonic::{Request, Response, Status};
 
 use tokio::sync::broadcast::Sender;
 
@@ -8,7 +8,7 @@ pub use internal_v010::interface_server::{Interface, InterfaceServer};
 pub use internal_v010::{NodeId, SystemId, Task};
 
 mod internal_v010 {
-    include!("../../proto/impulse.internal.v010.rs");
+    include!("../../../proto/impulse.internal.v010.rs");
 }
 
 // #[derive(Default)]
