@@ -14,4 +14,4 @@ impulse_proto = { path = "../../builds/impulse_proto" }
 
 [dev-dependencies]
 tokio = { path = "../../deps/impulse_tokio", package = "impulse_tokio", features = [ "macros", "rt-multi-thread" ] }
-impulse_interface_grpc = { path = "../../impulse_interface_grpc" }
+impulse_interface_internal = { path = "../impulse_interface_internal"}
