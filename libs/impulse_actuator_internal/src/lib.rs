@@ -92,75 +92,75 @@ mod tests {
         Ok(())
     }
 
-    #[tokio::test(flavor = "multi_thread")]
-    async fn init() -> Result<(), Box<dyn std::error::Error>> {
-        tokio::spawn(async move {
-            let (test_tx, _) = tokio::sync::broadcast::channel(1);
-            let test_interface_endpoint = std::net::SocketAddr::from_str(TEST_ADDR).unwrap();
-            let test_sender_clone = test_tx.clone();
-            let test_interface_internal =
-                impulse_interface_internal::Internal::init(test_sender_clone)
-                    .await
-                    .unwrap();
-            tonic::transport::Server::builder()
-                .add_service(impulse_interface_internal::InterfaceServer::new(
-                    test_interface_internal,
-                ))
-                .serve(test_interface_endpoint)
-                .await
-                .unwrap();
-        });
-        let test_internal = Internal::init(TEST_ENDPOINT).await?;
-        assert_eq!(test_internal.node_id.as_str(), "test_client_uuid");
-        Ok(())
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn register() -> Result<(), Box<dyn std::error::Error>> {
-        tokio::spawn(async move {
-            let (test_tx, _) = tokio::sync::broadcast::channel(1);
-            let test_interface_endpoint = std::net::SocketAddr::from_str(TEST_ADDR).unwrap();
-            let test_sender_clone = test_tx.clone();
-            let test_interface_internal =
-                impulse_interface_internal::Internal::init(test_sender_clone)
-                    .await
-                    .unwrap();
-            tonic::transport::Server::builder()
-                .add_service(impulse_interface_internal::InterfaceServer::new(
-                    test_interface_internal,
-                ))
-                .serve(test_interface_endpoint)
-                .await
-                .unwrap();
-        });
-        let mut test_internal = Internal::init(TEST_ENDPOINT).await?;
-        let test_reponse = test_internal.register().await?;
-        assert_eq!(test_reponse.get_ref().system_id.as_str(), "some_uuid");
-        Ok(())
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn delist() -> Result<(), Box<dyn std::error::Error>> {
-        tokio::spawn(async move {
-            let (test_tx, _) = tokio::sync::broadcast::channel(1);
-            let test_interface_endpoint = std::net::SocketAddr::from_str(TEST_ADDR).unwrap();
-            let test_sender_clone = test_tx.clone();
-            let test_interface_internal =
-                impulse_interface_internal::Internal::init(test_sender_clone)
-                    .await
-                    .unwrap();
-            tonic::transport::Server::builder()
-                .add_service(impulse_interface_internal::InterfaceServer::new(
-                    test_interface_internal,
-                ))
-                .serve(test_interface_endpoint)
-                .await
-                .unwrap();
-        });
-        let mut test_internal = Internal::init(TEST_ENDPOINT).await?;
-        test_internal.register().await?;
-        let test_reponse = test_internal.delist().await?;
-        assert_eq!(test_reponse.get_ref().system_id.as_str(), "some_uuid");
-        Ok(())
-    }
+    // #[tokio::test(flavor = "multi_thread")]
+    // async fn init() -> Result<(), Box<dyn std::error::Error>> {
+    //     tokio::spawn(async move {
+    //         let (test_tx, _) = tokio::sync::broadcast::channel(1);
+    //         let test_interface_endpoint = std::net::SocketAddr::from_str(TEST_ADDR).unwrap();
+    //         let test_sender_clone = test_tx.clone();
+    //         let test_interface_internal =
+    //             impulse_interface_internal::Internal::init(test_sender_clone)
+    //                 .await
+    //                 .unwrap();
+    //         tonic::transport::Server::builder()
+    //             .add_service(impulse_interface_internal::InterfaceServer::new(
+    //                 test_interface_internal,
+    //             ))
+    //             .serve(test_interface_endpoint)
+    //             .await
+    //             .unwrap();
+    //     });
+    //     let test_internal = Internal::init(TEST_ENDPOINT).await?;
+    //     assert_eq!(test_internal.node_id.as_str(), "test_client_uuid");
+    //     Ok(())
+    // }
+    //
+    // #[tokio::test(flavor = "multi_thread")]
+    // async fn register() -> Result<(), Box<dyn std::error::Error>> {
+    //     tokio::spawn(async move {
+    //         let (test_tx, _) = tokio::sync::broadcast::channel(1);
+    //         let test_interface_endpoint = std::net::SocketAddr::from_str(TEST_ADDR).unwrap();
+    //         let test_sender_clone = test_tx.clone();
+    //         let test_interface_internal =
+    //             impulse_interface_internal::Internal::init(test_sender_clone)
+    //                 .await
+    //                 .unwrap();
+    //         tonic::transport::Server::builder()
+    //             .add_service(impulse_interface_internal::InterfaceServer::new(
+    //                 test_interface_internal,
+    //             ))
+    //             .serve(test_interface_endpoint)
+    //             .await
+    //             .unwrap();
+    //     });
+    //     let mut test_internal = Internal::init(TEST_ENDPOINT).await?;
+    //     let test_reponse = test_internal.register().await?;
+    //     assert_eq!(test_reponse.get_ref().system_id.as_str(), "some_uuid");
+    //     Ok(())
+    // }
+    //
+    // #[tokio::test(flavor = "multi_thread")]
+    // async fn delist() -> Result<(), Box<dyn std::error::Error>> {
+    //     tokio::spawn(async move {
+    //         let (test_tx, _) = tokio::sync::broadcast::channel(1);
+    //         let test_interface_endpoint = std::net::SocketAddr::from_str(TEST_ADDR).unwrap();
+    //         let test_sender_clone = test_tx.clone();
+    //         let test_interface_internal =
+    //             impulse_interface_internal::Internal::init(test_sender_clone)
+    //                 .await
+    //                 .unwrap();
+    //         tonic::transport::Server::builder()
+    //             .add_service(impulse_interface_internal::InterfaceServer::new(
+    //                 test_interface_internal,
+    //             ))
+    //             .serve(test_interface_endpoint)
+    //             .await
+    //             .unwrap();
+    //     });
+    //     let mut test_internal = Internal::init(TEST_ENDPOINT).await?;
+    //     test_internal.register().await?;
+    //     let test_reponse = test_internal.delist().await?;
+    //     assert_eq!(test_reponse.get_ref().system_id.as_str(), "some_uuid");
+    //     Ok(())
+    // }
 }
