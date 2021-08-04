@@ -36,26 +36,27 @@ impl Engine {
         })
     }
 
-    pub async fn launch_vm(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn launch_vm(&mut self, uuid: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let mut api_socket = PathBuf::from(self.socket_base.as_path());
+        api_socket.push(uuid);
+        api_socket.set_extension("socket");
+
+        let mut config_file = PathBuf::from(self.config_base.as_path());
+        config_file.push(uuid);
+        config_file.set_extension("json");
+
         let stdin = Stdio::null();
         let stdout = Stdio::null();
         let stderr = Stdio::null();
-        let api_socket = self
-            .socket_base
-            .as_path()
-            .join("socket_name_goes_here.socket");
-        let config_file = self
-            .config_base
-            .as_path()
-            .join("config_file_name_goes_here.json");
+
         let command = Command::new(&self.firecracker_binary)
             .stdin(stdin)
             .stdout(stdout)
             .stderr(stderr)
             .arg("--api-sock")
-            .arg(api_socket)
+            .arg(&api_socket)
             .arg("--config-file")
-            .arg(config_file)
+            .arg(&config_file)
             .spawn()?;
 
         if let Some(id) = command.id() {
@@ -118,7 +119,7 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn launch_vm() -> Result<(), Box<dyn std::error::Error>> {
         let mut test_engine = Engine::init().await?;
-        let test_engine_boot = test_engine.launch_vm().await;
+        let test_engine_boot = test_engine.launch_vm("some_test_uuid").await;
         assert!(test_engine_boot.is_err());
         assert!(test_engine.running_pids.is_empty());
         Ok(())
