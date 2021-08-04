@@ -12,3 +12,5 @@ members = [
   "libs/impulse_interface_external",
   "libs/impulse_interface_internal",
 ]
+
+resolver = "2"
