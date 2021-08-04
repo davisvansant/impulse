@@ -18,10 +18,10 @@ impl Engine {
         let firecracker_binary = PathBuf::from("/usr/bin/firecracker");
         let jailer_binary = PathBuf::from("/usr/bin/jailer");
 
-        let config_base = PathBuf::from("/var/lib/impulse/machine");
+        let config_base = PathBuf::from("/var/lib/impulse_actuator/machine");
         fs::create_dir_all(&config_base).await?;
 
-        let socket_base = PathBuf::from("/tmp/impulse/socket");
+        let socket_base = PathBuf::from("/tmp/impulse_actuator/socket");
         fs::create_dir_all(&socket_base).await?;
 
         let running_pids = Vec::with_capacity(20);
@@ -100,13 +100,13 @@ mod tests {
         assert!(test_engine_jailer_binary_metadata.is_err());
         assert_eq!(
             test_engine.config_base.to_str().unwrap(),
-            "/var/lib/impulse/machine"
+            "/var/lib/impulse_actuator/machine"
         );
         let test_engine_config_base_metadata = fs::metadata(&test_engine.config_base).await?;
         assert!(test_engine_config_base_metadata.is_dir());
         assert_eq!(
             test_engine.socket_base.to_str().unwrap(),
-            "/tmp/impulse/socket",
+            "/tmp/impulse_actuator/socket",
         );
         let test_engine_socket_base_metadata = fs::metadata(&test_engine.socket_base).await?;
         assert!(test_engine_socket_base_metadata.is_dir());
