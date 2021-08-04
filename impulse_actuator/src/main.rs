@@ -18,7 +18,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         match task.action {
             1 => {
                 println!("start a vm {:?}", task);
-                engine.launch_vm().await?;
+                engine.launch_vm(&task.id).await?;
             }
             2 => {
                 println!("shutdown a vm {:?}", task);
