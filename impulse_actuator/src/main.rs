@@ -14,7 +14,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut internal_client = impulse_actuator_internal::Internal::init(endpoint).await?;
     println!(
-        ":: i m p u l s e _ a c t u a t o r >  node id | {}",
+        ":: i m p u l s e _ a c t u a t o r > node id | {}",
         &internal_client.node_id,
     );
 
@@ -31,7 +31,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let mut controller = internal_client.controller().await?;
-    println!(":: i m p u l s e _ a c t u a t o r > awaiting tasks |");
+    println!(":: i m p u l s e _ a c t u a t o r > awaiting tasks . . .");
 
     while let Some(task) = controller.get_mut().message().await? {
         match task.action {
