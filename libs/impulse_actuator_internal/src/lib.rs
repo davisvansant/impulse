@@ -24,7 +24,7 @@ impl InterfaceClientRequest {
 
 pub struct Internal {
     client: InterfaceClient<Channel>,
-    node_id: String,
+    pub node_id: String,
 }
 
 impl Internal {
