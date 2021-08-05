@@ -41,9 +41,19 @@ impl Engine {
         api_socket.push(uuid);
         api_socket.set_extension("socket");
 
+        println!(
+            ":: i m p u l s e _ a c t u a t o r > Launching new VM with socket | {:?}",
+            &api_socket,
+        );
+
         let mut config_file = PathBuf::from(self.config_base.as_path());
         config_file.push(uuid);
         config_file.set_extension("json");
+
+        println!(
+            ":: i m p u l s e _ a c t u a t o r > Launching new VM with config | {:?}",
+            &config_file,
+        );
 
         let stdin = Stdio::null();
         let stdout = Stdio::null();
@@ -60,6 +70,10 @@ impl Engine {
             .spawn()?;
 
         if let Some(id) = command.id() {
+            println!(
+                ":: i m p u l s e _ a c t u a t o r > Process ID | {:?}",
+                &id,
+            );
             self.running_pids.push(id)
         }
 
