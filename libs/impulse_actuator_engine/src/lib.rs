@@ -94,8 +94,17 @@ impl Engine {
         Ok(())
     }
 
-    pub async fn shutdown_vm(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        unimplemented!()
+    pub async fn shutdown_vm(&mut self, uuid: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let unit_slice = format!("{}.slice", uuid);
+        let command = Command::new("/usr/bin/systemctl")
+            .arg("stop")
+            .arg(&unit_slice)
+            .status()
+            .await?;
+
+        println!("{:?}", &command);
+
+        Ok(())
     }
 
     pub async fn shutdown(&mut self) -> Result<(), Box<dyn std::error::Error>> {
@@ -160,10 +169,9 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    #[should_panic]
     async fn shutdown_vm() {
         let mut test_engine = Engine::init().await.unwrap();
-        let test_engine_shutdown_vm = test_engine.shutdown_vm().await;
+        let test_engine_shutdown_vm = test_engine.shutdown_vm("some_test_uuid").await;
         assert!(test_engine_shutdown_vm.is_err());
     }
 
