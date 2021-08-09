@@ -62,7 +62,6 @@ impl Engine {
 
         let mut working_base = PathBuf::from(self.working_base.as_path());
         working_base.push(uuid);
-        working_base.set_extension("json");
 
         println!(
             ":: i m p u l s e _ a c t u a t o r > Launching new VM with base | {:?}",
@@ -82,7 +81,6 @@ impl Engine {
             .stderr(stderr)
             .arg(&unit_name)
             .arg(&unit_slice)
-            .arg(&working_base)
             .arg(&self.firecracker_binary)
             .arg("--api-sock")
             .arg(&api_socket)
