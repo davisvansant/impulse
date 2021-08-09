@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::process::Stdio;
 
 use tokio::fs;
+use tokio::fs::remove_file;
 use tokio::process::Command;
 
 pub struct Engine {
@@ -95,7 +96,17 @@ impl Engine {
     }
 
     pub async fn shutdown_vm(&mut self, uuid: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let mut api_socket = PathBuf::from(self.socket_base.as_path());
+        api_socket.push(uuid);
+        api_socket.set_extension("socket");
+
         let unit_slice = format!("{}.slice", uuid);
+
+        println!(
+            ":: i m p u l s e _ a c t u a t o r > Shutting down VM | {:?}",
+            uuid,
+        );
+
         let command = Command::new("/usr/bin/systemctl")
             .arg("stop")
             .arg(&unit_slice)
@@ -103,6 +114,13 @@ impl Engine {
             .await?;
 
         println!("{:?}", &command);
+
+        println!(
+            ":: i m p u l s e _ a c t u a t o r > Removing socket | {:?}",
+            &api_socket,
+        );
+
+        remove_file(&api_socket).await?;
 
         Ok(())
     }
