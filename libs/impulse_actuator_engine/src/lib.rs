@@ -9,6 +9,7 @@ pub struct Engine {
     pub jailer_binary: PathBuf,
     pub config_base: PathBuf,
     pub socket_base: PathBuf,
+    pub working_base: PathBuf,
     pub running_pids: Vec<u32>,
     pub active: bool,
 }
@@ -24,6 +25,9 @@ impl Engine {
         let socket_base = PathBuf::from("/tmp/impulse_actuator/socket");
         fs::create_dir_all(&socket_base).await?;
 
+        let working_base = PathBuf::from("/srv/impulse_actuator/");
+        fs::create_dir_all(&working_base).await?;
+
         let running_pids = Vec::with_capacity(20);
 
         Ok(Engine {
@@ -31,6 +35,7 @@ impl Engine {
             jailer_binary,
             config_base,
             socket_base,
+            working_base,
             running_pids,
             active: true,
         })
@@ -55,27 +60,38 @@ impl Engine {
             &config_file,
         );
 
+        let mut working_base = PathBuf::from(self.working_base.as_path());
+        working_base.push(uuid);
+        working_base.set_extension("json");
+
+        println!(
+            ":: i m p u l s e _ a c t u a t o r > Launching new VM with base | {:?}",
+            &working_base,
+        );
+
         let stdin = Stdio::null();
         let stdout = Stdio::null();
         let stderr = Stdio::null();
 
-        let command = Command::new(&self.firecracker_binary)
+        let unit_name = format!("--unit={}", uuid);
+        let unit_slice = format!("--slice={}", uuid);
+
+        let command = Command::new("/usr/bin/systemd-run")
             .stdin(stdin)
             .stdout(stdout)
             .stderr(stderr)
+            .arg(&unit_name)
+            .arg(&unit_slice)
+            .arg(&working_base)
+            .arg(&self.firecracker_binary)
             .arg("--api-sock")
             .arg(&api_socket)
             .arg("--config-file")
             .arg(&config_file)
-            .spawn()?;
+            .status()
+            .await?;
 
-        if let Some(id) = command.id() {
-            println!(
-                ":: i m p u l s e _ a c t u a t o r > Process ID | {:?}",
-                &id,
-            );
-            self.running_pids.push(id)
-        }
+        println!("{:?}", &command);
 
         Ok(())
     }
@@ -125,6 +141,12 @@ mod tests {
         );
         let test_engine_socket_base_metadata = fs::metadata(&test_engine.socket_base).await?;
         assert!(test_engine_socket_base_metadata.is_dir());
+        let test_engine_working_base_metadata = fs::metadata(&test_engine.working_base).await?;
+        assert!(test_engine_working_base_metadata.is_dir());
+        assert_eq!(
+            test_engine.working_base.to_str().unwrap(),
+            "/srv/impulse_actuator/",
+        );
         assert!(test_engine.running_pids.is_empty());
         assert!(test_engine.active);
         Ok(())
