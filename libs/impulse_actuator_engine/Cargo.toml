@@ -6,6 +6,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+rand = { path = "../../deps/impulse_rand", package = "impulse_rand" }
 tokio = { path = "../../deps/impulse_tokio", package = "impulse_tokio", features = [ "fs", "process" ] }
 
 [dev-dependencies]
