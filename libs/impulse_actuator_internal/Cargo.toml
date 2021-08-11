@@ -8,6 +8,7 @@ edition = "2018"
 [dependencies]
 prost = { path = "../../deps/impulse_prost", package = "impulse_prost" }
 tonic = { path = "../../deps/impulse_tonic", package = "impulse_tonic" }
+uuid = { path = "../../deps/impulse_uuid", package = "impulse_uuid", features = [ "v4" ] }
 
 [build-dependencies]
 impulse_proto = { path = "../../builds/impulse_proto" }
