@@ -7,7 +7,7 @@ use tokio::process::Command;
 
 mod layer2;
 
-use layer2::LayerTwo;
+use layer2::Layer2;
 
 pub struct Engine {
     pub firecracker_binary: PathBuf,
@@ -16,7 +16,7 @@ pub struct Engine {
     pub socket_base: PathBuf,
     pub working_base: PathBuf,
     pub running_pids: Vec<u32>,
-    pub layer_two: LayerTwo,
+    pub layer2: Layer2,
     pub active: bool,
 }
 
@@ -36,7 +36,7 @@ impl Engine {
 
         let running_pids = Vec::with_capacity(20);
 
-        let layer_two = LayerTwo::init().await?;
+        let layer2 = Layer2::init().await?;
 
         Ok(Engine {
             firecracker_binary,
@@ -45,7 +45,7 @@ impl Engine {
             socket_base,
             working_base,
             running_pids,
-            layer_two,
+            layer2,
             active: true,
         })
     }

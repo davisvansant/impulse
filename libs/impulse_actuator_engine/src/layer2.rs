@@ -2,17 +2,17 @@ use rand::distributions::{Distribution, Uniform};
 use rand::rngs::ThreadRng;
 use rand::thread_rng;
 
-pub struct LayerTwo {
+pub struct Layer2 {
     rng: ThreadRng,
     uniform: Uniform<u32>,
 }
 
-impl LayerTwo {
-    pub async fn init() -> Result<LayerTwo, Box<dyn std::error::Error>> {
+impl Layer2 {
+    pub async fn init() -> Result<Layer2, Box<dyn std::error::Error>> {
         let rng = thread_rng();
         let uniform = Uniform::new_inclusive(0, 15);
 
-        Ok(LayerTwo { rng, uniform })
+        Ok(Layer2 { rng, uniform })
     }
 
     pub async fn generate_mac_address(&mut self) -> Result<String, Box<dyn std::error::Error>> {
@@ -64,23 +64,23 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn init() -> Result<(), Box<dyn std::error::Error>> {
-        let test_layer_two = LayerTwo::init().await;
-        assert!(test_layer_two.is_ok());
+        let test_layer2 = Layer2::init().await;
+        assert!(test_layer2.is_ok());
         Ok(())
     }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn generate_mac_address() -> Result<(), Box<dyn std::error::Error>> {
-        let mut test_layer_two = LayerTwo::init().await?;
-        let test_mac_address = test_layer_two.generate_mac_address().await?;
+        let mut test_layer2 = Layer2::init().await?;
+        let test_mac_address = test_layer2.generate_mac_address().await?;
         assert_eq!(test_mac_address.len(), 17);
         Ok(())
     }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn generate_digit() -> Result<(), Box<dyn std::error::Error>> {
-        let mut test_layer_two = LayerTwo::init().await?;
-        let (test_digit_one, test_digit_two) = test_layer_two.generate_digit().await;
+        let mut test_layer2 = Layer2::init().await?;
+        let (test_digit_one, test_digit_two) = test_layer2.generate_digit().await;
         assert_eq!(test_digit_one.len(), 1);
         assert_eq!(test_digit_two.len(), 1);
         Ok(())
