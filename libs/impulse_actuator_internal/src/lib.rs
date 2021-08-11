@@ -4,6 +4,8 @@ pub use internal_v010::{NodeId, SystemId, Task};
 use tonic::transport::Channel;
 use tonic::{Request, Response, Status, Streaming};
 
+use uuid::Uuid;
+
 mod internal_v010 {
     include!("../../../proto/impulse.internal.v010.rs");
 }
@@ -15,22 +17,22 @@ pub enum InterfaceClientRequest {
 }
 
 impl InterfaceClientRequest {
-    pub async fn build(&self, node_id: &str) -> Request<NodeId> {
+    pub async fn build(&self, node_id: &Uuid) -> Request<NodeId> {
         Request::new(NodeId {
-            node_id: node_id.to_owned(),
+            node_id: node_id.to_string(),
         })
     }
 }
 
 pub struct Internal {
     client: InterfaceClient<Channel>,
-    pub node_id: String,
+    pub node_id: Uuid,
 }
 
 impl Internal {
     pub async fn init(endpoint: &'static str) -> Result<Internal, Box<dyn std::error::Error>> {
         let client = InterfaceClient::connect(endpoint).await?;
-        let node_id = String::from("test_client_uuid");
+        let node_id = Uuid::new_v4();
 
         Ok(Internal { client, node_id })
     }
@@ -69,26 +71,35 @@ mod tests {
 
     const TEST_ADDR: &str = "127.0.0.1:1284";
     const TEST_ENDPOINT: &str = "http://127.0.0.1:1284";
-    const TEST_UUID: &str = "test_uuid";
+    const TEST_UUID: Uuid = Uuid::nil();
 
     #[tokio::test(flavor = "multi_thread")]
     async fn interface_client_request_register() -> Result<(), Box<dyn std::error::Error>> {
-        let test_request = InterfaceClientRequest::Register.build(TEST_UUID).await;
-        assert_eq!(test_request.get_ref().node_id.as_str(), "test_uuid");
+        let test_request = InterfaceClientRequest::Register.build(&TEST_UUID).await;
+        assert_eq!(
+            test_request.get_ref().node_id.as_str(),
+            "00000000-0000-0000-0000-000000000000",
+        );
         Ok(())
     }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn interface_client_request_controller() -> Result<(), Box<dyn std::error::Error>> {
-        let test_request = InterfaceClientRequest::Controller.build(TEST_UUID).await;
-        assert_eq!(test_request.get_ref().node_id.as_str(), "test_uuid");
+        let test_request = InterfaceClientRequest::Controller.build(&TEST_UUID).await;
+        assert_eq!(
+            test_request.get_ref().node_id.as_str(),
+            "00000000-0000-0000-0000-000000000000",
+        );
         Ok(())
     }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn interface_client_request_delist() -> Result<(), Box<dyn std::error::Error>> {
-        let test_request = InterfaceClientRequest::Delist.build(TEST_UUID).await;
-        assert_eq!(test_request.get_ref().node_id.as_str(), "test_uuid");
+        let test_request = InterfaceClientRequest::Delist.build(&TEST_UUID).await;
+        assert_eq!(
+            test_request.get_ref().node_id.as_str(),
+            "00000000-0000-0000-0000-000000000000",
+        );
         Ok(())
     }
 
