@@ -4,6 +4,8 @@ use tokio::sync::broadcast::Sender;
 
 use tokio_stream::wrappers::ReceiverStream;
 
+use uuid::Uuid;
+
 pub use internal_v010::interface_server::{Interface, InterfaceServer};
 pub use internal_v010::{NodeId, SystemId, Task};
 
@@ -13,14 +15,14 @@ mod internal_v010 {
 
 // #[derive(Default)]
 pub struct Internal {
-    system_id: String,
+    system_id: Uuid,
     nodes: tokio::sync::Mutex<Vec<String>>,
     sender_clone: Sender<u8>,
 }
 
 impl Internal {
     pub async fn init(sender_clone: Sender<u8>) -> Result<Internal, Box<dyn std::error::Error>> {
-        let system_id = String::from("some_uuid");
+        let system_id = Uuid::new_v4();
         let nodes = tokio::sync::Mutex::new(Vec::with_capacity(20));
 
         Ok(Internal {
@@ -40,7 +42,7 @@ impl Interface for Internal {
         nodes.push(node);
 
         let system_id = SystemId {
-            system_id: self.system_id.to_owned(),
+            system_id: self.system_id.to_string(),
         };
         let response = Response::new(system_id);
         Ok(response)
@@ -105,7 +107,7 @@ impl Interface for Internal {
                 println!("node removed...");
 
                 let response = SystemId {
-                    system_id: self.system_id.to_owned(),
+                    system_id: self.system_id.to_string(),
                 };
 
                 Ok(Response::new(response))
@@ -123,13 +125,14 @@ impl Interface for Internal {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::str::FromStr;
 
     #[tokio::test(flavor = "multi_thread")]
     async fn init() -> Result<(), Box<dyn std::error::Error>> {
         let (test_tx, _test_rx) = tokio::sync::broadcast::channel(1);
         let test_internal = Internal::init(test_tx).await?;
         let test_nodes = test_internal.nodes.lock().await;
-        assert_eq!(test_internal.system_id.as_str(), "some_uuid");
+        assert_eq!(test_internal.system_id.get_version_num(), 4);
         assert_eq!(test_nodes.len(), 0);
         assert_eq!(test_nodes.capacity(), 20);
         Ok(())
@@ -146,10 +149,9 @@ mod tests {
             node_id: String::from("test_uuid"),
         });
         let test_internal_register = test_internal.register(test_request).await?;
-        assert_eq!(
-            test_internal_register.get_ref().system_id.as_str(),
-            "some_uuid",
-        );
+        let test_internal_register_uuid =
+            Uuid::from_str(test_internal_register.get_ref().system_id.as_str()).unwrap();
+        assert_eq!(test_internal_register_uuid.get_version_num(), 4);
         let test_nodes = test_internal.nodes.lock().await;
         assert_eq!(test_nodes.len(), 1);
         Ok(())
@@ -214,10 +216,9 @@ mod tests {
             node_id: String::from("test_uuid"),
         });
         let test_internal_delist = test_internal.delist(test_request).await?;
-        assert_eq!(
-            test_internal_delist.get_ref().system_id.as_str(),
-            "some_uuid",
-        );
+        let test_internal_delist_uuid =
+            Uuid::from_str(test_internal_delist.get_ref().system_id.as_str()).unwrap();
+        assert_eq!(test_internal_delist_uuid.get_version_num(), 4);
         let test_nodes = test_internal.nodes.lock().await;
         assert_eq!(test_nodes.len(), 0);
         Ok(())
