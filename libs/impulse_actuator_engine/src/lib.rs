@@ -6,8 +6,10 @@ use tokio::fs::remove_file;
 use tokio::process::Command;
 
 mod layer2;
+mod layer3;
 
 use layer2::Layer2;
+use layer3::Layer3;
 
 pub struct Engine {
     pub firecracker_binary: PathBuf,
@@ -17,6 +19,7 @@ pub struct Engine {
     pub working_base: PathBuf,
     pub running_pids: Vec<u32>,
     pub layer2: Layer2,
+    pub layer3: Layer3,
     pub active: bool,
 }
 
@@ -37,6 +40,7 @@ impl Engine {
         let running_pids = Vec::with_capacity(20);
 
         let layer2 = Layer2::init().await?;
+        let layer3 = Layer3::init().await?;
 
         Ok(Engine {
             firecracker_binary,
@@ -46,6 +50,7 @@ impl Engine {
             working_base,
             running_pids,
             layer2,
+            layer3,
             active: true,
         })
     }
