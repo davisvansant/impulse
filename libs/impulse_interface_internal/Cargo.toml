@@ -11,6 +11,7 @@ tokio-stream = "0.1.7"
 prost = { path = "../../deps/impulse_prost", package = "impulse_prost" }
 tonic = { path = "../../deps/impulse_tonic", package = "impulse_tonic" }
 tokio = { path = "../../deps/impulse_tokio", package = "impulse_tokio", features = [ "sync" ] }
+uuid = { path = "../../deps/impulse_uuid", package = "impulse_uuid", features = [ "v4" ] }
 
 [build-dependencies]
 impulse_proto = { path = "../../builds/impulse_proto" }
