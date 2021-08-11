@@ -5,6 +5,7 @@ members = [
   "deps/impulse_rand",
   "deps/impulse_tokio",
   "deps/impulse_tonic",
+  "deps/impulse_uuid",
   "impulse",
   "impulse_actuator",
   "impulse_interface",
