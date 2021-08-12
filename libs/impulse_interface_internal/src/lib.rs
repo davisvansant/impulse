@@ -69,7 +69,7 @@ impl Interface for Internal {
                         1 => {
                             println!("Start instance! {:?}", &msg);
 
-                            let id = Uuid::new_v4().to_string();
+                            let id = Uuid::new_v4().to_simple().to_string();
                             let task = Task { action: 1, id };
 
                             tx.send(Ok(task)).await.unwrap();
@@ -77,7 +77,7 @@ impl Interface for Internal {
                         2 => {
                             println!("Shutdown instance! {:?}", &msg);
 
-                            let id = Uuid::new_v4().to_string();
+                            let id = Uuid::new_v4().to_simple().to_string();
                             let task = Task { action: 2, id };
 
                             tx.send(Ok(task)).await.unwrap();
