@@ -68,18 +68,18 @@ impl Interface for Internal {
                     match msg {
                         1 => {
                             println!("Start instance! {:?}", &msg);
-                            let task = Task {
-                                action: 1,
-                                id: String::from("some_task_uuid"),
-                            };
+
+                            let id = Uuid::new_v4().to_string();
+                            let task = Task { action: 1, id };
+
                             tx.send(Ok(task)).await.unwrap();
                         }
                         2 => {
                             println!("Shutdown instance! {:?}", &msg);
-                            let task = Task {
-                                action: 2,
-                                id: String::from("some_task_uuid"),
-                            };
+
+                            let id = Uuid::new_v4().to_string();
+                            let task = Task { action: 2, id };
+
                             tx.send(Ok(task)).await.unwrap();
                         }
                         _ => (),
