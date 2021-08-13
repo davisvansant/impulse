@@ -2,6 +2,11 @@ use crate::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
+use serde_json::to_string_pretty;
+
+use tokio::fs::create_dir_all;
+use tokio::fs::write;
+
 #[derive(Deserialize, Serialize)]
 struct ConfigFile {
     #[serde(rename = "boot-source")]
@@ -47,6 +52,17 @@ impl ConfigFile {
             metrics: None,
             mmds_config: None,
         })
+    }
+
+    async fn write(&self) -> Result<(), Box<dyn std::error::Error>> {
+        let mut config_file = PathBuf::from("/var/lib/impulse_actuator/machine/");
+        config_file.push("some_uuid");
+        create_dir_all(&config_file).await?;
+        config_file.push("some_uuid.json");
+        let contents = to_string_pretty(&self)?;
+        write(&config_file, contents).await?;
+
+        Ok(())
     }
 }
 
@@ -179,6 +195,44 @@ mod tests {
         assert!(&test_config_file.machine_config.ht_enabled);
         assert_eq!(&test_config_file.machine_config.mem_size_mib, &1024);
         assert_eq!(&test_config_file.machine_config.vcpu_count, &2);
+
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn write() -> Result<(), Box<dyn std::error::Error>> {
+        let test_config_file = ConfigFile::build().await?;
+        test_config_file.write().await?;
+        let test_config_file_metadata =
+            tokio::fs::metadata("/var/lib/impulse_actuator/machine/some_uuid/some_uuid.json")
+                .await?;
+        assert!(test_config_file_metadata.is_file());
+        let test_config_file_contents =
+            tokio::fs::read("/var/lib/impulse_actuator/machine/some_uuid/some_uuid.json").await?;
+        let test_json: ConfigFile = serde_json::from_slice(&test_config_file_contents)?;
+        assert_eq!(
+            test_json.boot_source.kernel_image_path.to_str().unwrap(),
+            "/srv/impulse_actuator/some_uuid/some_kernel_image",
+        );
+        assert_eq!(test_json.boot_source.boot_args.as_str(), "some_boot_args");
+        assert_eq!(
+            test_json.boot_source.initrd_path.to_str().unwrap(),
+            "/srv/impulse_actuator/some_uuid/some_initrd",
+        );
+
+        for drive in test_json.drives {
+            assert_eq!(drive.drive_id.as_str(), "some_drive_id");
+            assert!(!drive.is_read_only);
+            assert!(drive.is_root_device);
+            assert_eq!(
+                drive.path_on_host.to_str().unwrap(),
+                "/srv/impulse_actuator/some_uuid/some_drive",
+            );
+        }
+
+        assert!(test_json.machine_config.ht_enabled);
+        assert_eq!(test_json.machine_config.mem_size_mib, 1024);
+        assert_eq!(test_json.machine_config.vcpu_count, 2);
 
         Ok(())
     }
