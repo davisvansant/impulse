@@ -7,6 +7,8 @@ edition = "2018"
 
 [dependencies]
 rand = { path = "../../deps/impulse_rand", package = "impulse_rand" }
+serde = { path = "../../deps/impulse_serde", package = "impulse_serde", features = [ "derive"] }
+serde_json = { path = "../../deps/impulse_serde_json", package = "impulse_serde_json" }
 tokio = { path = "../../deps/impulse_tokio", package = "impulse_tokio", features = [ "fs", "process" ] }
 
 [dev-dependencies]
