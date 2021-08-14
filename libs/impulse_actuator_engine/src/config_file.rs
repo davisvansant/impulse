@@ -31,11 +31,10 @@ struct ConfigFile {
 }
 
 impl ConfigFile {
-    async fn build() -> Result<ConfigFile, Box<dyn std::error::Error>> {
-        let uuid = String::from("some_uuid");
-        let boot_source = BootSource::build(&uuid).await?;
+    async fn build(uuid: &str) -> Result<ConfigFile, Box<dyn std::error::Error>> {
+        let boot_source = BootSource::build(uuid).await?;
         let mut drives = Vec::with_capacity(3);
-        let drive = Drive::build(false, true, &uuid).await?;
+        let drive = Drive::build(false, true, uuid).await?;
 
         drives.push(drive);
 
@@ -54,11 +53,12 @@ impl ConfigFile {
         })
     }
 
-    async fn write(&self) -> Result<(), Box<dyn std::error::Error>> {
+    async fn write(&self, uuid: &str) -> Result<(), Box<dyn std::error::Error>> {
         let mut config_file = PathBuf::from("/var/lib/impulse_actuator/machine/");
-        config_file.push("some_uuid");
+        config_file.push(uuid);
         create_dir_all(&config_file).await?;
-        config_file.push("some_uuid.json");
+        config_file.push(uuid);
+        config_file.set_extension("json");
         let contents = to_string_pretty(&self)?;
         write(&config_file, contents).await?;
 
@@ -162,16 +162,19 @@ impl NetworkInterfaces {
 mod tests {
     use super::*;
 
+    const TEST_UUID: uuid::Uuid = uuid::Uuid::nil();
+
     #[tokio::test(flavor = "multi_thread")]
     async fn build() -> Result<(), Box<dyn std::error::Error>> {
-        let test_config_file = ConfigFile::build().await?;
+        let test_config_file =
+            ConfigFile::build(TEST_UUID.to_simple().to_string().as_str()).await?;
         assert_eq!(
             &test_config_file
                 .boot_source
                 .kernel_image_path
                 .to_str()
                 .unwrap(),
-            &"/srv/impulse_actuator/some_uuid/some_kernel_image",
+            &"/srv/impulse_actuator/00000000000000000000000000000000/some_kernel_image",
         );
         assert_eq!(
             &test_config_file.boot_source.boot_args.as_str(),
@@ -179,7 +182,7 @@ mod tests {
         );
         assert_eq!(
             &test_config_file.boot_source.initrd_path.to_str().unwrap(),
-            &"/srv/impulse_actuator/some_uuid/some_initrd",
+            &"/srv/impulse_actuator/00000000000000000000000000000000/some_initrd",
         );
 
         for drive in &test_config_file.drives {
@@ -188,7 +191,7 @@ mod tests {
             assert!(&drive.is_root_device);
             assert_eq!(
                 &drive.path_on_host.to_str().unwrap(),
-                &"/srv/impulse_actuator/some_uuid/some_drive",
+                &"/srv/impulse_actuator/00000000000000000000000000000000/some_drive",
             );
         }
 
@@ -201,23 +204,26 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn write() -> Result<(), Box<dyn std::error::Error>> {
-        let test_config_file = ConfigFile::build().await?;
-        test_config_file.write().await?;
+        let test_config_file =
+            ConfigFile::build(TEST_UUID.to_simple().to_string().as_str()).await?;
+        test_config_file
+            .write(TEST_UUID.to_simple().to_string().as_str())
+            .await?;
         let test_config_file_metadata =
-            tokio::fs::metadata("/var/lib/impulse_actuator/machine/some_uuid/some_uuid.json")
+            tokio::fs::metadata("/var/lib/impulse_actuator/machine/00000000000000000000000000000000/00000000000000000000000000000000.json")
                 .await?;
         assert!(test_config_file_metadata.is_file());
         let test_config_file_contents =
-            tokio::fs::read("/var/lib/impulse_actuator/machine/some_uuid/some_uuid.json").await?;
+            tokio::fs::read("/var/lib/impulse_actuator/machine/00000000000000000000000000000000/00000000000000000000000000000000.json").await?;
         let test_json: ConfigFile = serde_json::from_slice(&test_config_file_contents)?;
         assert_eq!(
             test_json.boot_source.kernel_image_path.to_str().unwrap(),
-            "/srv/impulse_actuator/some_uuid/some_kernel_image",
+            "/srv/impulse_actuator/00000000000000000000000000000000/some_kernel_image",
         );
         assert_eq!(test_json.boot_source.boot_args.as_str(), "some_boot_args");
         assert_eq!(
             test_json.boot_source.initrd_path.to_str().unwrap(),
-            "/srv/impulse_actuator/some_uuid/some_initrd",
+            "/srv/impulse_actuator/00000000000000000000000000000000/some_initrd",
         );
 
         for drive in test_json.drives {
@@ -226,7 +232,7 @@ mod tests {
             assert!(drive.is_root_device);
             assert_eq!(
                 drive.path_on_host.to_str().unwrap(),
-                "/srv/impulse_actuator/some_uuid/some_drive",
+                "/srv/impulse_actuator/00000000000000000000000000000000/some_drive",
             );
         }
 
