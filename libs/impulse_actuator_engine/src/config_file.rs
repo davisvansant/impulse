@@ -8,7 +8,7 @@ use tokio::fs::create_dir_all;
 use tokio::fs::write;
 
 #[derive(Deserialize, Serialize)]
-struct ConfigFile {
+pub struct ConfigFile {
     #[serde(rename = "boot-source")]
     boot_source: BootSource,
     drives: Vec<Drive>,
@@ -31,7 +31,7 @@ struct ConfigFile {
 }
 
 impl ConfigFile {
-    async fn build(uuid: &str) -> Result<ConfigFile, Box<dyn std::error::Error>> {
+    pub async fn build(uuid: &str) -> Result<ConfigFile, Box<dyn std::error::Error>> {
         let boot_source = BootSource::build(uuid).await?;
         let mut drives = Vec::with_capacity(3);
         let drive = Drive::build(false, true, uuid).await?;
@@ -53,7 +53,7 @@ impl ConfigFile {
         })
     }
 
-    async fn write(&self, uuid: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn write(&self, uuid: &str) -> Result<PathBuf, Box<dyn std::error::Error>> {
         let mut config_file = PathBuf::from("/var/lib/impulse_actuator/machine/");
         config_file.push(uuid);
         create_dir_all(&config_file).await?;
@@ -62,7 +62,7 @@ impl ConfigFile {
         let contents = to_string_pretty(&self)?;
         write(&config_file, contents).await?;
 
-        Ok(())
+        Ok(config_file)
     }
 }
 
