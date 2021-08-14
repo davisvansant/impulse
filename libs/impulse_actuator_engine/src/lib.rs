@@ -9,6 +9,7 @@ mod config_file;
 mod layer2;
 mod layer3;
 
+use config_file::ConfigFile;
 use layer2::Layer2;
 use layer3::Layer3;
 
@@ -66,13 +67,12 @@ impl Engine {
             &api_socket,
         );
 
-        let mut config_file = PathBuf::from(self.config_base.as_path());
-        config_file.push(uuid);
-        config_file.set_extension("json");
+        let config_file = ConfigFile::build(uuid).await?;
+        let config_file_location = config_file.write(uuid).await?;
 
         println!(
             ":: i m p u l s e _ a c t u a t o r > Launching new VM with config | {:?}",
-            &config_file,
+            &config_file_location,
         );
 
         let mut working_base = PathBuf::from(self.working_base.as_path());
@@ -100,7 +100,7 @@ impl Engine {
             .arg("--api-sock")
             .arg(&api_socket)
             .arg("--config-file")
-            .arg(&config_file)
+            .arg(&config_file_location)
             .status()
             .await?;
 
