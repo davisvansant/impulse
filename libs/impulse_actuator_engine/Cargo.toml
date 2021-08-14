@@ -13,3 +13,4 @@ tokio = { path = "../../deps/impulse_tokio", package = "impulse_tokio", features
 
 [dev-dependencies]
 tokio = { path = "../../deps/impulse_tokio", package = "impulse_tokio", features = [ "macros", "rt-multi-thread" ] }
+uuid = { path = "../../deps/impulse_uuid", package = "impulse_uuid", features = [ "v4" ] }
