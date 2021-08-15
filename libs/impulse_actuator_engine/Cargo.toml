@@ -10,7 +10,7 @@ rand = { path = "../../deps/impulse_rand", package = "impulse_rand" }
 serde = { path = "../../deps/impulse_serde", package = "impulse_serde", features = [ "derive"] }
 serde_json = { path = "../../deps/impulse_serde_json", package = "impulse_serde_json" }
 tokio = { path = "../../deps/impulse_tokio", package = "impulse_tokio", features = [ "fs", "process" ] }
+uuid = { path = "../../deps/impulse_uuid", package = "impulse_uuid", features = [ "v4" ] }
 
 [dev-dependencies]
 tokio = { path = "../../deps/impulse_tokio", package = "impulse_tokio", features = [ "macros", "rt-multi-thread" ] }
-uuid = { path = "../../deps/impulse_uuid", package = "impulse_uuid", features = [ "v4" ] }
