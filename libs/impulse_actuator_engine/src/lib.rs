@@ -8,10 +8,12 @@ use tokio::process::Command;
 mod config_file;
 mod layer2;
 mod layer3;
+mod micro_vm;
 
 use config_file::ConfigFile;
 use layer2::Layer2;
 use layer3::Layer3;
+use micro_vm::MicroVM;
 
 pub struct Engine {
     pub firecracker_binary: PathBuf,
@@ -58,13 +60,16 @@ impl Engine {
     }
 
     pub async fn launch_vm(&mut self, uuid: &str) -> Result<(), Box<dyn std::error::Error>> {
-        let mut api_socket = PathBuf::from(self.socket_base.as_path());
-        api_socket.push(uuid);
-        api_socket.set_extension("socket");
+        let micro_vm = MicroVM::init(
+            uuid,
+            self.socket_base.as_path(),
+            self.working_base.as_path(),
+        )
+        .await?;
 
         println!(
             ":: i m p u l s e _ a c t u a t o r > Launching new VM with socket | {:?}",
-            &api_socket,
+            &micro_vm.api_socket,
         );
 
         let config_file = ConfigFile::build(uuid).await?;
@@ -75,30 +80,24 @@ impl Engine {
             &config_file_location,
         );
 
-        let mut working_base = PathBuf::from(self.working_base.as_path());
-        working_base.push(uuid);
-
         println!(
             ":: i m p u l s e _ a c t u a t o r > Launching new VM with base | {:?}",
-            &working_base,
+            &micro_vm.base,
         );
 
         let stdin = Stdio::null();
         let stdout = Stdio::null();
         let stderr = Stdio::null();
 
-        let unit_name = format!("--unit={}", uuid);
-        let unit_slice = format!("--slice={}", uuid);
-
         let command = Command::new("/usr/bin/systemd-run")
             .stdin(stdin)
             .stdout(stdout)
             .stderr(stderr)
-            .arg(&unit_name)
-            .arg(&unit_slice)
+            .arg(&micro_vm.unit_name)
+            .arg(&micro_vm.unit_slice)
             .arg(&self.firecracker_binary)
             .arg("--api-sock")
-            .arg(&api_socket)
+            .arg(&micro_vm.api_socket)
             .arg("--config-file")
             .arg(&config_file_location)
             .status()
@@ -152,6 +151,8 @@ impl Engine {
 mod tests {
     use super::*;
 
+    const TEST_LAUNCH_VM_UUID: uuid::Uuid = uuid::Uuid::nil();
+
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
     async fn init() -> Result<(), Box<dyn std::error::Error>> {
         let test_engine = Engine::init().await?;
@@ -194,7 +195,9 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn launch_vm() -> Result<(), Box<dyn std::error::Error>> {
         let mut test_engine = Engine::init().await?;
-        let test_engine_boot = test_engine.launch_vm("some_test_uuid").await;
+        let test_engine_boot = test_engine
+            .launch_vm(TEST_LAUNCH_VM_UUID.to_simple().to_string().as_str())
+            .await;
         assert!(test_engine_boot.is_err());
         assert!(test_engine.running_pids.is_empty());
         Ok(())
