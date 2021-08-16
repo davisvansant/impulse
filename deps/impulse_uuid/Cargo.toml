@@ -9,4 +9,5 @@ edition = "2018"
 uuid = { version = "0.8.2", default-features = false }
 
 [features]
+std = ["uuid/std"]
 v4 = ["uuid/v4"]
