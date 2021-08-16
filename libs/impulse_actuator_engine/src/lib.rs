@@ -1,9 +1,13 @@
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::Stdio;
 
 use tokio::fs;
 use tokio::fs::remove_file;
 use tokio::process::Command;
+
+use uuid::adapter::Simple;
+use uuid::Uuid;
 
 mod config_file;
 mod layer2;
@@ -21,7 +25,7 @@ pub struct Engine {
     pub config_base: PathBuf,
     pub socket_base: PathBuf,
     pub working_base: PathBuf,
-    pub launched_vms: Vec<MicroVM>,
+    pub launched_vms: HashMap<Simple, MicroVM>,
     pub layer2: Layer2,
     pub layer3: Layer3,
     pub active: bool,
@@ -41,7 +45,7 @@ impl Engine {
         let working_base = PathBuf::from("/srv/impulse_actuator/");
         fs::create_dir_all(&working_base).await?;
 
-        let launched_vms = Vec::with_capacity(20);
+        let launched_vms = HashMap::with_capacity(20);
 
         let layer2 = Layer2::init().await?;
         let layer3 = Layer3::init().await?;
@@ -67,22 +71,12 @@ impl Engine {
         )
         .await?;
 
-        println!(
-            ":: i m p u l s e _ a c t u a t o r > Launching new VM with socket | {:?}",
-            &micro_vm.api_socket,
-        );
-
         let config_file = ConfigFile::build(uuid).await?;
         let config_file_location = config_file.write(uuid).await?;
 
         println!(
-            ":: i m p u l s e _ a c t u a t o r > Launching new VM with config | {:?}",
-            &config_file_location,
-        );
-
-        println!(
-            ":: i m p u l s e _ a c t u a t o r > Launching new VM with base | {:?}",
-            &micro_vm.base,
+            ":: i m p u l s e _ a c t u a t o r > Launching new VM | {:?}",
+            uuid,
         );
 
         let stdin = Stdio::null();
@@ -104,6 +98,26 @@ impl Engine {
             .await?;
 
         println!("{:?}", &command);
+
+        if command.success() {
+            let uuid = Uuid::parse_str(uuid)
+                .expect("Could not parse UUID!")
+                .to_simple();
+            if let Some(micro_vm) = self.launched_vms.insert(uuid, micro_vm) {
+                println!(
+                    ":: i m p u l s e _ a c t u a t o r > Launched new VM with socket | {:?}",
+                    &micro_vm.api_socket,
+                );
+                println!(
+                    ":: i m p u l s e _ a c t u a t o r > Launched new VM with config | {:?}",
+                    &config_file_location,
+                );
+                println!(
+                    ":: i m p u l s e _ a c t u a t o r > Launched new VM with base | {:?}",
+                    &micro_vm.base,
+                );
+            }
+        }
 
         Ok(())
     }
@@ -127,6 +141,23 @@ impl Engine {
             .await?;
 
         println!("{:?}", &command);
+
+        if command.success() {
+            let uuid = Uuid::parse_str(uuid)
+                .expect("Could not parse UUID!")
+                .to_simple();
+            if let Some(micro_vm) = self.launched_vms.remove(&uuid) {
+                println!(
+                    ":: i m p u l s e _ a c t u a t o r > Removing socket | {:?}",
+                    &micro_vm.api_socket,
+                );
+                println!(
+                    ":: i m p u l s e _ a c t u a t o r > Removing base | {:?}",
+                    &micro_vm.base,
+                );
+                println!(":: i m p u l s e _ a c t u a t o r > Shutdown! |");
+            }
+        }
 
         println!(
             ":: i m p u l s e _ a c t u a t o r > Removing socket | {:?}",
@@ -206,7 +237,9 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn shutdown_vm() {
         let mut test_engine = Engine::init().await.unwrap();
-        let test_engine_shutdown_vm = test_engine.shutdown_vm("some_test_uuid").await;
+        let test_engine_shutdown_vm = test_engine
+            .shutdown_vm(TEST_LAUNCH_VM_UUID.to_simple().to_string().as_str())
+            .await;
         assert!(test_engine_shutdown_vm.is_err());
     }
 
