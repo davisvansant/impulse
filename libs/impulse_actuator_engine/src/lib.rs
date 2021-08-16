@@ -21,7 +21,7 @@ pub struct Engine {
     pub config_base: PathBuf,
     pub socket_base: PathBuf,
     pub working_base: PathBuf,
-    pub running_pids: Vec<u32>,
+    pub launched_vms: Vec<MicroVM>,
     pub layer2: Layer2,
     pub layer3: Layer3,
     pub active: bool,
@@ -41,7 +41,7 @@ impl Engine {
         let working_base = PathBuf::from("/srv/impulse_actuator/");
         fs::create_dir_all(&working_base).await?;
 
-        let running_pids = Vec::with_capacity(20);
+        let launched_vms = Vec::with_capacity(20);
 
         let layer2 = Layer2::init().await?;
         let layer3 = Layer3::init().await?;
@@ -52,7 +52,7 @@ impl Engine {
             config_base,
             socket_base,
             working_base,
-            running_pids,
+            launched_vms,
             layer2,
             layer3,
             active: true,
@@ -187,7 +187,7 @@ mod tests {
             test_engine.working_base.to_str().unwrap(),
             "/srv/impulse_actuator/",
         );
-        assert!(test_engine.running_pids.is_empty());
+        assert!(test_engine.launched_vms.is_empty());
         assert!(test_engine.active);
         Ok(())
     }
@@ -199,7 +199,7 @@ mod tests {
             .launch_vm(TEST_LAUNCH_VM_UUID.to_simple().to_string().as_str())
             .await;
         assert!(test_engine_boot.is_err());
-        assert!(test_engine.running_pids.is_empty());
+        assert!(test_engine.launched_vms.is_empty());
         Ok(())
     }
 
