@@ -153,7 +153,7 @@ mod tests {
 
     const TEST_LAUNCH_VM_UUID: uuid::Uuid = uuid::Uuid::nil();
 
-    #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+    #[tokio::test(flavor = "multi_thread")]
     async fn init() -> Result<(), Box<dyn std::error::Error>> {
         let test_engine = Engine::init().await?;
         assert_eq!(
