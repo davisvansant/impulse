@@ -100,9 +100,7 @@ impl Engine {
         println!("{:?}", &command);
 
         if command.success() {
-            let uuid = Uuid::parse_str(uuid)
-                .expect("Could not parse UUID!")
-                .to_simple();
+            let uuid = Self::parse_uuid(uuid).await?;
             if let Some(micro_vm) = self.launched_vms.insert(uuid, micro_vm) {
                 println!(
                     ":: i m p u l s e _ a c t u a t o r > Launched new VM with socket | {:?}",
@@ -143,9 +141,7 @@ impl Engine {
         println!("{:?}", &command);
 
         if command.success() {
-            let uuid = Uuid::parse_str(uuid)
-                .expect("Could not parse UUID!")
-                .to_simple();
+            let uuid = Self::parse_uuid(uuid).await?;
             if let Some(micro_vm) = self.launched_vms.remove(&uuid) {
                 println!(
                     ":: i m p u l s e _ a c t u a t o r > Removing socket | {:?}",
@@ -175,6 +171,12 @@ impl Engine {
         }
 
         Ok(())
+    }
+
+    async fn parse_uuid(uuid: &str) -> Result<Simple, Box<dyn std::error::Error>> {
+        let parsed_uuid = Uuid::parse_str(uuid)?;
+
+        Ok(parsed_uuid.to_simple())
     }
 }
 
@@ -249,6 +251,25 @@ mod tests {
         assert!(test_engine.active);
         test_engine.shutdown().await?;
         assert!(!test_engine.active);
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn parse_uuid() -> Result<(), Box<dyn std::error::Error>> {
+        let test_parse_uuid =
+            Engine::parse_uuid(TEST_LAUNCH_VM_UUID.to_simple().to_string().as_str()).await?;
+        assert_eq!(
+            test_parse_uuid,
+            Uuid::parse_str("00000000000000000000000000000000")?.to_simple(),
+        );
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn parse_uuid_error() -> Result<(), Box<dyn std::error::Error>> {
+        let test_uuid = "0000000";
+        let test_parse_uuid = Engine::parse_uuid(test_uuid).await;
+        assert!(test_parse_uuid.is_err());
         Ok(())
     }
 }
