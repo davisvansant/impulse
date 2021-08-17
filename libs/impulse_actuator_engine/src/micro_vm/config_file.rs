@@ -78,7 +78,7 @@ impl BootSource {
         let kernel_image = "some_kernel_image";
         let kernel_image_path =
             PathBuf::from(format!("/srv/impulse_actuator/{}/{}", uuid, kernel_image));
-        let boot_args = String::from("some_boot_args");
+        let boot_args = String::from("console=ttyS0 reboot=k panic=1 pci=off");
         let initrd = "some_initrd";
         let initrd_path = PathBuf::from(format!("/srv/impulse_actuator/{}/{}", uuid, initrd));
 
@@ -105,7 +105,7 @@ impl Drive {
         uuid: &str,
     ) -> Result<Drive, Box<dyn std::error::Error>> {
         let drive_id = String::from("some_drive_id");
-        let drive = String::from("some_drive");
+        let drive = String::from("some_root_fs");
         let path_on_host = PathBuf::from(format!("/srv/impulse_actuator/{}/{}", uuid, drive));
 
         Ok(Drive {
@@ -169,35 +169,35 @@ mod tests {
         let test_config_file =
             ConfigFile::build(TEST_UUID.to_simple().to_string().as_str()).await?;
         assert_eq!(
-            &test_config_file
+            test_config_file
                 .boot_source
                 .kernel_image_path
                 .to_str()
                 .unwrap(),
-            &"/srv/impulse_actuator/00000000000000000000000000000000/some_kernel_image",
+            "/srv/impulse_actuator/00000000000000000000000000000000/some_kernel_image",
         );
         assert_eq!(
-            &test_config_file.boot_source.boot_args.as_str(),
-            &"some_boot_args",
+            test_config_file.boot_source.boot_args.as_str(),
+            "console=ttyS0 reboot=k panic=1 pci=off",
         );
         assert_eq!(
-            &test_config_file.boot_source.initrd_path.to_str().unwrap(),
-            &"/srv/impulse_actuator/00000000000000000000000000000000/some_initrd",
+            test_config_file.boot_source.initrd_path.to_str().unwrap(),
+            "/srv/impulse_actuator/00000000000000000000000000000000/some_initrd",
         );
 
-        for drive in &test_config_file.drives {
-            assert_eq!(&drive.drive_id.as_str(), &"some_drive_id");
-            assert!(!&drive.is_read_only);
-            assert!(&drive.is_root_device);
+        for drive in test_config_file.drives {
+            assert_eq!(drive.drive_id.as_str(), "some_drive_id");
+            assert!(!drive.is_read_only);
+            assert!(drive.is_root_device);
             assert_eq!(
-                &drive.path_on_host.to_str().unwrap(),
-                &"/srv/impulse_actuator/00000000000000000000000000000000/some_drive",
+                drive.path_on_host.to_str().unwrap(),
+                "/srv/impulse_actuator/00000000000000000000000000000000/some_root_fs",
             );
         }
 
-        assert!(&test_config_file.machine_config.ht_enabled);
-        assert_eq!(&test_config_file.machine_config.mem_size_mib, &1024);
-        assert_eq!(&test_config_file.machine_config.vcpu_count, &2);
+        assert!(test_config_file.machine_config.ht_enabled);
+        assert_eq!(test_config_file.machine_config.mem_size_mib, 1024);
+        assert_eq!(test_config_file.machine_config.vcpu_count, 2);
 
         Ok(())
     }
@@ -220,7 +220,10 @@ mod tests {
             test_json.boot_source.kernel_image_path.to_str().unwrap(),
             "/srv/impulse_actuator/00000000000000000000000000000000/some_kernel_image",
         );
-        assert_eq!(test_json.boot_source.boot_args.as_str(), "some_boot_args");
+        assert_eq!(
+            test_json.boot_source.boot_args.as_str(),
+            "console=ttyS0 reboot=k panic=1 pci=off",
+        );
         assert_eq!(
             test_json.boot_source.initrd_path.to_str().unwrap(),
             "/srv/impulse_actuator/00000000000000000000000000000000/some_initrd",
@@ -232,7 +235,7 @@ mod tests {
             assert!(drive.is_root_device);
             assert_eq!(
                 drive.path_on_host.to_str().unwrap(),
-                "/srv/impulse_actuator/00000000000000000000000000000000/some_drive",
+                "/srv/impulse_actuator/00000000000000000000000000000000/some_root_fs",
             );
         }
 
