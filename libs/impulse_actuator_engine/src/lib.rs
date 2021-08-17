@@ -9,15 +9,13 @@ use tokio::process::Command;
 use uuid::adapter::Simple;
 use uuid::Uuid;
 
-mod config_file;
-mod layer2;
-mod layer3;
-mod micro_vm;
-
-use config_file::ConfigFile;
 use layer2::Layer2;
 use layer3::Layer3;
 use micro_vm::MicroVM;
+
+mod layer2;
+mod layer3;
+mod micro_vm;
 
 pub struct Engine {
     pub firecracker_binary: PathBuf,
@@ -71,8 +69,7 @@ impl Engine {
         )
         .await?;
 
-        let config_file = ConfigFile::build(uuid).await?;
-        let config_file_location = config_file.write(uuid).await?;
+        let config_file_location = micro_vm.config_file.write(uuid).await?;
 
         println!(
             ":: i m p u l s e _ a c t u a t o r > Launching new VM | {:?}",
