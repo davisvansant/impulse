@@ -78,12 +78,23 @@ impl Engine {
         )
         .await?;
 
+        println!(
+            ":: i m p u l s e _ a c t u a t o r > Lauching new VM with socket | {:?}",
+            &micro_vm.api_socket,
+        );
+        println!(
+            ":: i m p u l s e _ a c t u a t o r > Launching new VM with base | {:?}",
+            &micro_vm.base,
+        );
+
         let config_file = micro_vm.config_file.write(uuid).await?;
 
         println!(
-            ":: i m p u l s e _ a c t u a t o r > Using config | {:?}",
+            ":: i m p u l s e _ a c t u a t o r > Launching new VM with config | {:?}",
             &config_file,
         );
+
+        micro_vm.ready_boot(&self.images_base).await?;
 
         let stdin = Stdio::null();
         let stdout = Stdio::null();
@@ -107,15 +118,8 @@ impl Engine {
 
         if command.success() {
             let uuid = Self::parse_uuid(uuid).await?;
-            if let Some(micro_vm) = self.launched_vms.insert(uuid, micro_vm) {
-                println!(
-                    ":: i m p u l s e _ a c t u a t o r > Launched new VM with socket | {:?}",
-                    &micro_vm.api_socket,
-                );
-                println!(
-                    ":: i m p u l s e _ a c t u a t o r > Launched new VM with base | {:?}",
-                    &micro_vm.base,
-                );
+            if self.launched_vms.insert(uuid, micro_vm).is_none() {
+                println!(":: i m p u l s e _ a c t u a t o r > Launched! |");
             }
         }
 
