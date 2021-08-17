@@ -22,6 +22,7 @@ pub struct Engine {
     pub config_base: PathBuf,
     pub socket_base: PathBuf,
     pub working_base: PathBuf,
+    pub images_base: PathBuf,
     pub launched_vms: HashMap<Simple, MicroVM>,
     pub layer2: Layer2,
     pub layer3: Layer3,
@@ -42,6 +43,9 @@ impl Engine {
         let working_base = PathBuf::from("/srv/impulse_actuator/");
         fs::create_dir_all(&working_base).await?;
 
+        let images_base = PathBuf::from("/var/lib/impulse_actuator/images");
+        fs::create_dir_all(&images_base).await?;
+
         let launched_vms = HashMap::with_capacity(20);
 
         let layer2 = Layer2::init().await?;
@@ -53,6 +57,7 @@ impl Engine {
             config_base,
             socket_base,
             working_base,
+            images_base,
             launched_vms,
             layer2,
             layer3,
@@ -214,6 +219,12 @@ mod tests {
         assert_eq!(
             test_engine.working_base.to_str().unwrap(),
             "/srv/impulse_actuator/",
+        );
+        let test_engine_images_base_metadata = fs::metadata(&test_engine.images_base).await?;
+        assert!(test_engine_images_base_metadata.is_dir());
+        assert_eq!(
+            test_engine.images_base.to_str().unwrap(),
+            "/var/lib/impulse_actuator/images",
         );
         assert!(test_engine.launched_vms.is_empty());
         assert!(test_engine.active);
