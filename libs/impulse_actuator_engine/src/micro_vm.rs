@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use tokio::fs::{create_dir_all, metadata, remove_dir_all, remove_file};
+use tokio::fs::{copy, create_dir_all, metadata, remove_dir_all, remove_file};
 
 use crate::PathBuf;
 
@@ -43,6 +43,26 @@ impl MicroVM {
             unit_name,
             unit_slice,
         })
+    }
+
+    pub async fn ready_boot(&self, images: &Path) -> Result<(), Box<dyn std::error::Error>> {
+        let kernel_image_name = "some_kernel_image";
+        let initrd_name = "some_initrd";
+        let root_fs_name = "some_root_fs";
+
+        let base_kernel_image = images.join(&kernel_image_name);
+        let base_initrd = images.join(&initrd_name);
+        let base_root_fs = images.join(&root_fs_name);
+
+        let running_kernel_image = self.base.as_path().join(&kernel_image_name);
+        let running_initrd = self.base.as_path().join(&initrd_name);
+        let running_root_fs = self.base.as_path().join(&root_fs_name);
+
+        copy(base_kernel_image, running_kernel_image).await?;
+        copy(base_initrd, running_initrd).await?;
+        copy(base_root_fs, running_root_fs).await?;
+
+        Ok(())
     }
 
     pub async fn cleanup_api_socket(&self) -> Result<(), Box<dyn std::error::Error>> {
@@ -100,6 +120,35 @@ mod tests {
             test_micro_vm.unit_slice.as_str(),
             "--slice=00000000000000000000000000000000",
         );
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn ready_boot() -> Result<(), Box<dyn std::error::Error>> {
+        let test_micro_vm = MicroVM::init(
+            TEST_MICROVM_UUID.to_simple().to_string().as_str(),
+            Path::new(TEST_SOCKET_BASE),
+            Path::new(TEST_WORKING_BASE),
+        )
+        .await?;
+        let test_images_base = Path::new("/var/lib/test_impulse_actuator/images");
+        create_dir_all(test_images_base).await?;
+        tokio::fs::write(
+            test_images_base.join("some_kernel_image"),
+            b"test kernel image",
+        )
+        .await?;
+        tokio::fs::write(test_images_base.join("some_initrd"), b"test initrd").await?;
+        tokio::fs::write(test_images_base.join("some_root_fs"), b"test root fs").await?;
+        let test_ready_boot = test_micro_vm.ready_boot(test_images_base).await;
+        assert!(test_ready_boot.is_ok());
+        let test_kernel_image_md =
+            metadata(&test_micro_vm.base.as_path().join("some_kernel_image")).await?;
+        assert!(test_kernel_image_md.is_file());
+        let test_initrd_md = metadata(&test_micro_vm.base.as_path().join("some_initrd")).await?;
+        assert!(test_initrd_md.is_file());
+        let test_root_fs_md = metadata(&test_micro_vm.base.as_path().join("some_root_fs")).await?;
+        assert!(test_root_fs_md.is_file());
         Ok(())
     }
 
