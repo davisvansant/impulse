@@ -62,6 +62,11 @@ impl Engine {
     }
 
     pub async fn launch_vm(&mut self, uuid: &str) -> Result<(), Box<dyn std::error::Error>> {
+        println!(
+            ":: i m p u l s e _ a c t u a t o r > Preparing to launch new VM | {:?}",
+            uuid,
+        );
+
         let micro_vm = MicroVM::init(
             uuid,
             self.socket_base.as_path(),
@@ -69,11 +74,11 @@ impl Engine {
         )
         .await?;
 
-        let config_file_location = micro_vm.config_file.write(uuid).await?;
+        let config_file = micro_vm.config_file.write(uuid).await?;
 
         println!(
-            ":: i m p u l s e _ a c t u a t o r > Launching new VM | {:?}",
-            uuid,
+            ":: i m p u l s e _ a c t u a t o r > Using config | {:?}",
+            &config_file,
         );
 
         let stdin = Stdio::null();
@@ -90,7 +95,7 @@ impl Engine {
             .arg("--api-sock")
             .arg(&micro_vm.api_socket)
             .arg("--config-file")
-            .arg(&config_file_location)
+            .arg(&config_file)
             .status()
             .await?;
 
@@ -102,10 +107,6 @@ impl Engine {
                 println!(
                     ":: i m p u l s e _ a c t u a t o r > Launched new VM with socket | {:?}",
                     &micro_vm.api_socket,
-                );
-                println!(
-                    ":: i m p u l s e _ a c t u a t o r > Launched new VM with config | {:?}",
-                    &config_file_location,
                 );
                 println!(
                     ":: i m p u l s e _ a c t u a t o r > Launched new VM with base | {:?}",
