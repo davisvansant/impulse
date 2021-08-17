@@ -2,11 +2,7 @@ use crate::{ConfigFile, PathBuf};
 
 use std::path::Path;
 
-use uuid::adapter::Simple;
-use uuid::Uuid;
-
 pub struct MicroVM {
-    pub uuid: Simple,
     pub api_socket: PathBuf,
     pub config_file: ConfigFile,
     pub base: PathBuf,
@@ -20,10 +16,6 @@ impl MicroVM {
         socket_base: &Path,
         working_base: &Path,
     ) -> Result<MicroVM, Box<dyn std::error::Error>> {
-        let uuid = Uuid::parse_str(uuid)
-            .expect("Could not parse UUID!")
-            .to_simple();
-
         let mut api_socket = socket_base.to_path_buf();
         api_socket.push(&uuid.to_string());
         api_socket.set_extension("socket");
@@ -37,7 +29,6 @@ impl MicroVM {
         let unit_slice = format!("--slice={}", uuid);
 
         Ok(MicroVM {
-            uuid,
             api_socket,
             config_file,
             base,
@@ -51,7 +42,7 @@ impl MicroVM {
 mod tests {
     use super::*;
 
-    const TEST_MICROVM_UUID: Uuid = Uuid::nil();
+    const TEST_MICROVM_UUID: crate::Uuid = crate::Uuid::nil();
     const TEST_SOCKET_BASE: &str = "/tmp/test_impulse_actuator/socket";
     const TEST_WORKING_BASE: &str = "/srv/test_impulse_actuator/";
 
@@ -63,10 +54,6 @@ mod tests {
             Path::new(TEST_WORKING_BASE),
         )
         .await?;
-        assert_eq!(
-            test_micro_vm.uuid.to_string().as_str(),
-            "00000000000000000000000000000000",
-        );
         assert_eq!(
             test_micro_vm.api_socket.to_str().unwrap(),
             "/tmp/test_impulse_actuator/socket/00000000000000000000000000000000.socket",
