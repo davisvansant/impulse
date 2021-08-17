@@ -1,7 +1,6 @@
 use std::path::Path;
 
-use tokio::fs::metadata;
-use tokio::fs::remove_file;
+use tokio::fs::{metadata, remove_dir_all, remove_file};
 
 use crate::PathBuf;
 
@@ -48,6 +47,16 @@ impl MicroVM {
         if let Ok(metadata) = metadata(&self.api_socket).await {
             if metadata.is_file() {
                 remove_file(&self.api_socket).await?;
+            }
+        }
+
+        Ok(())
+    }
+
+    pub async fn cleanup_base(&self) -> Result<(), Box<dyn std::error::Error>> {
+        if let Ok(metadata) = metadata(&self.base).await {
+            if metadata.is_dir() {
+                remove_dir_all(&self.base).await?;
             }
         }
 
@@ -121,6 +130,42 @@ mod tests {
         .await?;
         let test_cleanup_api_socket = test_micro_vm.cleanup_api_socket().await;
         assert!(test_cleanup_api_socket.is_ok());
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn cleanup_base_ok() -> Result<(), Box<dyn std::error::Error>> {
+        let test_base = format!(
+            "{}/{}",
+            TEST_WORKING_BASE,
+            TEST_MICROVM_UUID.to_simple().to_string().as_str(),
+        );
+        tokio::fs::create_dir_all(test_base).await?;
+
+        let test_micro_vm = MicroVM::init(
+            TEST_MICROVM_UUID.to_simple().to_string().as_str(),
+            Path::new(TEST_SOCKET_BASE),
+            Path::new(TEST_WORKING_BASE),
+        )
+        .await?;
+        tokio::fs::write(&test_micro_vm.base.join("test_file_1"), b"test base file 1").await?;
+        tokio::fs::write(&test_micro_vm.base.join("test_file_2"), b"test base file 2").await?;
+        tokio::fs::write(&test_micro_vm.base.join("test_file_3"), b"test base file 3").await?;
+        let test_cleanup_base = test_micro_vm.cleanup_base().await;
+        assert!(test_cleanup_base.is_ok());
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn cleanup_base_error() -> Result<(), Box<dyn std::error::Error>> {
+        let test_micro_vm = MicroVM::init(
+            TEST_MICROVM_UUID.to_simple().to_string().as_str(),
+            Path::new(TEST_SOCKET_BASE),
+            Path::new(TEST_WORKING_BASE),
+        )
+        .await?;
+        let test_cleanup_base = test_micro_vm.cleanup_base().await;
+        assert!(test_cleanup_base.is_ok());
         Ok(())
     }
 }
