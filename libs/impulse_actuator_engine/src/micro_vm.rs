@@ -1,10 +1,10 @@
-mod config_file;
-
 use std::path::Path;
 
 use crate::PathBuf;
 
 use config_file::ConfigFile;
+
+mod config_file;
 
 pub struct MicroVM {
     pub api_socket: PathBuf,
