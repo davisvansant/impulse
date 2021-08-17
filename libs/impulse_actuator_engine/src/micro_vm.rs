@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use tokio::fs::{metadata, remove_dir_all, remove_file};
+use tokio::fs::{create_dir_all, metadata, remove_dir_all, remove_file};
 
 use crate::PathBuf;
 
@@ -30,6 +30,8 @@ impl MicroVM {
 
         let mut base = working_base.to_path_buf();
         base.push(&uuid.to_string());
+
+        create_dir_all(&base).await?;
 
         let unit_name = format!("--unit={}", uuid);
         let unit_slice = format!("--slice={}", uuid);
@@ -80,6 +82,8 @@ mod tests {
             Path::new(TEST_WORKING_BASE),
         )
         .await?;
+        let test_micro_vm_srv_metadata = metadata(&test_micro_vm.base).await?;
+        assert!(test_micro_vm_srv_metadata.is_dir());
         assert_eq!(
             test_micro_vm.api_socket.to_str().unwrap(),
             "/tmp/test_impulse_actuator/socket/00000000000000000000000000000000.socket",
