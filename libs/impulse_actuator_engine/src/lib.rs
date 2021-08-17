@@ -3,7 +3,6 @@ use std::path::PathBuf;
 use std::process::Stdio;
 
 use tokio::fs;
-use tokio::fs::remove_file;
 use tokio::process::Command;
 
 use uuid::adapter::Simple;
@@ -128,11 +127,9 @@ impl Engine {
                     uuid,
                 );
 
-                let unit_slice = &micro_vm.unit_slice;
-
                 let command = Command::new("/usr/bin/systemctl")
                     .arg("stop")
-                    .arg(&unit_slice)
+                    .arg(&micro_vm.unit_slice)
                     .status()
                     .await?;
 
@@ -144,20 +141,19 @@ impl Engine {
                             ":: i m p u l s e _ a c t u a t o r > Removing socket | {:?}",
                             &micro_vm.api_socket,
                         );
+
+                        micro_vm.cleanup_api_socket().await?;
+
                         println!(
                             ":: i m p u l s e _ a c t u a t o r > Removing base | {:?}",
                             &micro_vm.base,
                         );
+
+                        micro_vm.cleanup_base().await?;
+
                         println!(":: i m p u l s e _ a c t u a t o r > Shutdown! |");
                     }
                 }
-
-                // println!(
-                //     ":: i m p u l s e _ a c t u a t o r > Removing socket | {:?}",
-                //     &micro_vm.api_socket,
-                // );
-                //
-                // remove_file(&api_socket).await?;
             }
         }
 
