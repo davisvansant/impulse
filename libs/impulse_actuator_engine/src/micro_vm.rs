@@ -139,13 +139,6 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn cleanup_base_ok() -> Result<(), Box<dyn std::error::Error>> {
-        let test_base = format!(
-            "{}/{}",
-            TEST_WORKING_BASE,
-            TEST_MICROVM_UUID.to_simple().to_string().as_str(),
-        );
-        tokio::fs::create_dir_all(test_base).await?;
-
         let test_micro_vm = MicroVM::init(
             TEST_MICROVM_UUID.to_simple().to_string().as_str(),
             Path::new(TEST_SOCKET_BASE),
@@ -168,6 +161,7 @@ mod tests {
             Path::new(TEST_WORKING_BASE),
         )
         .await?;
+        remove_dir_all(&test_micro_vm.base).await?;
         let test_cleanup_base = test_micro_vm.cleanup_base().await;
         assert!(test_cleanup_base.is_ok());
         Ok(())
