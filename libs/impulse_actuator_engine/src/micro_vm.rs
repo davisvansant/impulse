@@ -1,5 +1,8 @@
 use std::path::Path;
 
+use tokio::fs::metadata;
+use tokio::fs::remove_file;
+
 use crate::PathBuf;
 
 use config_file::ConfigFile;
@@ -40,6 +43,16 @@ impl MicroVM {
             unit_slice,
         })
     }
+
+    pub async fn cleanup_api_socket(&self) -> Result<(), Box<dyn std::error::Error>> {
+        if let Ok(metadata) = metadata(&self.api_socket).await {
+            if metadata.is_file() {
+                remove_file(&self.api_socket).await?;
+            }
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -74,6 +87,40 @@ mod tests {
             test_micro_vm.unit_slice.as_str(),
             "--slice=00000000000000000000000000000000",
         );
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn cleanup_api_socket_ok() -> Result<(), Box<dyn std::error::Error>> {
+        let test_socket = format!(
+            "{}/{}",
+            TEST_SOCKET_BASE,
+            TEST_MICROVM_UUID.to_simple().to_string().as_str(),
+        );
+        tokio::fs::create_dir_all(test_socket).await?;
+
+        let test_micro_vm = MicroVM::init(
+            TEST_MICROVM_UUID.to_simple().to_string().as_str(),
+            Path::new(TEST_SOCKET_BASE),
+            Path::new(TEST_WORKING_BASE),
+        )
+        .await?;
+        tokio::fs::write(&test_micro_vm.api_socket, b"test socket").await?;
+        let test_cleanup_api_socket = test_micro_vm.cleanup_api_socket().await;
+        assert!(test_cleanup_api_socket.is_ok());
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn cleanup_api_socket_error() -> Result<(), Box<dyn std::error::Error>> {
+        let test_micro_vm = MicroVM::init(
+            TEST_MICROVM_UUID.to_simple().to_string().as_str(),
+            Path::new(TEST_SOCKET_BASE),
+            Path::new(TEST_WORKING_BASE),
+        )
+        .await?;
+        let test_cleanup_api_socket = test_micro_vm.cleanup_api_socket().await;
+        assert!(test_cleanup_api_socket.is_ok());
         Ok(())
     }
 }
