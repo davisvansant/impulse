@@ -57,7 +57,7 @@ impl ConfigFile {
         let mut config_file = PathBuf::from("/var/lib/impulse_actuator/machine/");
         config_file.push(uuid);
         create_dir_all(&config_file).await?;
-        config_file.push(uuid);
+        config_file.push("config_file");
         config_file.set_extension("json");
         let contents = to_string_pretty(&self)?;
         write(&config_file, contents).await?;
@@ -209,12 +209,15 @@ mod tests {
         test_config_file
             .write(TEST_UUID.to_simple().to_string().as_str())
             .await?;
-        let test_config_file_metadata =
-            tokio::fs::metadata("/var/lib/impulse_actuator/machine/00000000000000000000000000000000/00000000000000000000000000000000.json")
-                .await?;
+        let test_config_file_metadata = tokio::fs::metadata(
+            "/var/lib/impulse_actuator/machine/00000000000000000000000000000000/config_file.json",
+        )
+        .await?;
         assert!(test_config_file_metadata.is_file());
-        let test_config_file_contents =
-            tokio::fs::read("/var/lib/impulse_actuator/machine/00000000000000000000000000000000/00000000000000000000000000000000.json").await?;
+        let test_config_file_contents = tokio::fs::read(
+            "/var/lib/impulse_actuator/machine/00000000000000000000000000000000/config_file.json",
+        )
+        .await?;
         let test_json: ConfigFile = serde_json::from_slice(&test_config_file_contents)?;
         assert_eq!(
             test_json.boot_source.kernel_image_path.to_str().unwrap(),
