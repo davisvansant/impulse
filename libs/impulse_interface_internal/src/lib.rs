@@ -62,7 +62,10 @@ impl Interface for Internal {
         &self,
         request: tonic::Request<NodeId>,
     ) -> Result<tonic::Response<Self::ControllerStream>, tonic::Status> {
-        println!("{:?}", request);
+        println!(
+            ":: i m p u l s e _ i n t e r f a c e > Node connected and awaiting tasks | {}",
+            request.get_ref().node_id,
+        );
 
         let nodes = self.nodes.lock().await;
 
@@ -72,10 +75,11 @@ impl Interface for Internal {
 
             tokio::spawn(async move {
                 while let Ok(msg) = receiver.recv().await {
-                    println!("Message received - {:?}", msg);
                     match msg {
                         1 => {
-                            println!("Start instance! {:?}", &msg);
+                            println!(
+                                ":: i m p u l s e _ i n t e r f a c e > Incoming start instance request",
+                            );
 
                             let id = Uuid::new_v4().to_simple().to_string();
                             let task = Task { action: 1, id };
@@ -83,7 +87,9 @@ impl Interface for Internal {
                             tx.send(Ok(task)).await.unwrap();
                         }
                         2 => {
-                            println!("Shutdown instance! {:?}", &msg);
+                            println!(
+                                ":: i m p u l s e _ i n t e r f a c e > Incoming shutdown instance request",
+                            );
 
                             let id = Uuid::new_v4().to_simple().to_string();
                             let task = Task { action: 2, id };
