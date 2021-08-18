@@ -15,7 +15,7 @@ mod external_v010 {
 // #[derive(Default)]
 pub struct External {
     status: String,
-    version: String,
+    pub version: String,
     sender: Sender<u8>,
 }
 

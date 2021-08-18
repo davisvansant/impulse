@@ -15,7 +15,7 @@ mod internal_v010 {
 
 // #[derive(Default)]
 pub struct Internal {
-    system_id: Uuid,
+    pub system_id: Uuid,
     nodes: tokio::sync::Mutex<Vec<String>>,
     sender_clone: Sender<u8>,
 }
