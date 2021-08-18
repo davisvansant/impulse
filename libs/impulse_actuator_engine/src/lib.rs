@@ -79,7 +79,7 @@ impl Engine {
         .await?;
 
         println!(
-            ":: i m p u l s e _ a c t u a t o r > Lauching new VM with socket | {:?}",
+            ":: i m p u l s e _ a c t u a t o r > Launching new VM with socket | {:?}",
             &micro_vm.api_socket,
         );
         println!(
@@ -119,7 +119,7 @@ impl Engine {
         if command.success() {
             let uuid = Self::parse_uuid(uuid).await?;
             if self.launched_vms.insert(uuid, micro_vm).is_none() {
-                println!(":: i m p u l s e _ a c t u a t o r > Launched! |");
+                println!(":: i m p u l s e _ a c t u a t o r > Launched!");
             }
         }
 
