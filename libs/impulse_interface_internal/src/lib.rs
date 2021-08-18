@@ -78,7 +78,7 @@ impl Interface for Internal {
                     match msg {
                         1 => {
                             println!(
-                                ":: i m p u l s e _ i n t e r f a c e > Incoming start instance request",
+                                ":: i m p u l s e _ i n t e r f a c e > Received start instance request",
                             );
 
                             let id = Uuid::new_v4().to_simple().to_string();
@@ -88,7 +88,7 @@ impl Interface for Internal {
                         }
                         2 => {
                             println!(
-                                ":: i m p u l s e _ i n t e r f a c e > Incoming shutdown instance request",
+                                ":: i m p u l s e _ i n t e r f a c e > Received shutdown instance request",
                             );
 
                             let id = Uuid::new_v4().to_simple().to_string();
