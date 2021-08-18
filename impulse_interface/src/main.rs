@@ -11,8 +11,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let internal_interface = impulse_interface_internal::Internal::init(sender_clone).await?;
 
     println!(
-        ":: i m p u l s e _ i n t e r f a c e > Launching system on {}",
+        ":: i m p u l s e _ i n t e r f a c e > Launching system | {}",
         &socket_addr,
+    );
+
+    println!(
+        ":: i m p u l s e _ i n t e r f a c e > System Version | {}",
+        &external_interface.version,
+    );
+
+    println!(
+        ":: i m p u l s e _ i n t e r f a c e > System id | {}",
+        &internal_interface.system_id,
     );
 
     let ctrl_c = async move {
