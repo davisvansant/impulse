@@ -36,15 +36,23 @@ impl Internal {
 #[tonic::async_trait]
 impl Interface for Internal {
     async fn register(&self, request: Request<NodeId>) -> Result<Response<SystemId>, Status> {
+        println!(
+            ":: i m p u l s e _ i n t e r f a c e > New register request! | {}",
+            request.get_ref().node_id,
+        );
+
         let mut nodes = self.nodes.lock().await;
         let node = request.into_inner().node_id;
 
         nodes.push(node);
 
+        println!(":: i m p u l s e _ i n t e r f a c e > Node Registered!");
+
         let system_id = SystemId {
             system_id: self.system_id.to_string(),
         };
         let response = Response::new(system_id);
+
         Ok(response)
     }
 
