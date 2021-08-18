@@ -62,26 +62,29 @@ impl Interface for External {
         &self,
         request: Request<MicroVm>,
     ) -> Result<Response<LaunchVmResponse>, Status> {
-        match request.into_inner().name.as_str() {
-            "tester" => {
-                println!("{:?}", &self.sender.receiver_count());
-                if let Ok(msg) = &self.sender.send(1) {
-                    println!("Message sent - {:?}", msg);
-                }
+        println!(
+            ":: i m p u l s e _ i n t e r f a c e > Incoming launch request | {:?}",
+            request.get_ref(),
+        );
+        println!(
+            ":: i m p u l s e _ i n t e r f a c e > Sending request to connected nodes | {:?}",
+            &self.sender.receiver_count(),
+        );
 
-                let launch_vm = LaunchVmResponse {
-                    launched: true,
-                    details: String::from("vm has started!"),
-                };
-                let response = Response::new(launch_vm);
-                Ok(response)
-            }
-            _ => {
-                let message = String::from("The requested VM was not found... please try again!");
-                let status = Status::new(tonic::Code::NotFound, message);
-                Err(status)
-            }
+        if let Ok(msg) = &self.sender.send(1) {
+            println!(
+                ":: i m p u l s e _ i n t e r f a c e > Message sent | {:?}",
+                &msg,
+            );
         }
+
+        let launch_vm = LaunchVmResponse {
+            launched: true,
+            details: String::from("vm has started!"),
+        };
+        let response = Response::new(launch_vm);
+
+        Ok(response)
     }
 
     async fn shutdown_vm(
@@ -166,24 +169,24 @@ mod tests {
         Ok(())
     }
 
-    #[tokio::test(flavor = "multi_thread")]
-    async fn launch_vm_status() -> Result<(), Box<dyn std::error::Error>> {
-        let (test_tx, _rx) = tokio::sync::broadcast::channel(1);
-        let test_external = External::init(test_tx).await?;
-        let test_request = Request::new(MicroVm {
-            name: String::from("not tester"),
-        });
-        let test_external_launch_vm = test_external.launch_vm(test_request).await;
-        assert_eq!(
-            test_external_launch_vm.as_ref().unwrap_err().code(),
-            tonic::Code::NotFound,
-        );
-        assert_eq!(
-            test_external_launch_vm.as_ref().unwrap_err().message(),
-            "The requested VM was not found... please try again!",
-        );
-        Ok(())
-    }
+    // #[tokio::test(flavor = "multi_thread")]
+    // async fn launch_vm_status() -> Result<(), Box<dyn std::error::Error>> {
+    //     let (test_tx, _rx) = tokio::sync::broadcast::channel(1);
+    //     let test_external = External::init(test_tx).await?;
+    //     let test_request = Request::new(MicroVm {
+    //         name: String::from("not tester"),
+    //     });
+    //     let test_external_launch_vm = test_external.launch_vm(test_request).await;
+    //     assert_eq!(
+    //         test_external_launch_vm.as_ref().unwrap_err().code(),
+    //         tonic::Code::NotFound,
+    //     );
+    //     assert_eq!(
+    //         test_external_launch_vm.as_ref().unwrap_err().message(),
+    //         "The requested VM was not found... please try again!",
+    //     );
+    //     Ok(())
+    // }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn shutdown_vm_response() -> Result<(), Box<dyn std::error::Error>> {
