@@ -5,6 +5,7 @@ package impulse.internal.v010;
 service Interface {
   rpc Register (NodeId) returns (SystemId) {}
   rpc Controller (NodeId) returns (stream Task) {}
+  rpc Result (TaskResult) returns (SystemId) {}
   rpc Delist (NodeId) returns (SystemId) {}
 }
 
@@ -24,4 +25,8 @@ message Task {
   }
   Action action = 1;
   string id = 2;
+}
+
+message TaskResult {
+  string uuid = 1;
 }
