@@ -38,6 +38,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             1 => {
                 println!("start a vm {:?}", task);
                 engine.launch_vm(&task.id).await?;
+                internal_client.result(&task.id).await?;
             }
             2 => {
                 println!("shutdown a vm {:?}", task);
