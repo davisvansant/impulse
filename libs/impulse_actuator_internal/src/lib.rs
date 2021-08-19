@@ -1,5 +1,5 @@
 pub use internal_v010::interface_client::InterfaceClient;
-pub use internal_v010::{NodeId, SystemId, Task};
+pub use internal_v010::{NodeId, SystemId, Task, TaskResult};
 
 use tonic::transport::Channel;
 use tonic::{Request, Response, Status, Streaming};
@@ -51,6 +51,16 @@ impl Internal {
             .build(&self.node_id)
             .await;
         let response = client.controller(request).await?;
+
+        Ok(response)
+    }
+
+    pub async fn result(&mut self, uuid: &str) -> Result<Response<SystemId>, Status> {
+        let mut client = self.client.clone();
+        let request = Request::new(TaskResult {
+            uuid: uuid.to_string(),
+        });
+        let response = client.result(request).await?;
 
         Ok(response)
     }
