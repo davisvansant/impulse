@@ -6,25 +6,25 @@ use tokio_stream::wrappers::ReceiverStream;
 
 use uuid::Uuid;
 
-pub use internal_v010::interface_server::{Interface, InterfaceServer};
-pub use internal_v010::{NodeId, SystemId, Task, TaskResult};
+use crate::impulse::internal::v010::{NodeId, SystemId};
+use crate::impulse::shared::v010::{MicroVmLaunch, MicroVmShutdown, Task};
+use crate::IMPULSE_INTERFACE;
 
-mod internal_v010 {
-    include!("../../../proto/impulse.internal.v010.rs");
-}
+pub use crate::impulse::internal::v010::interface_server::{Interface, InterfaceServer};
 
-// #[derive(Default)]
 pub struct Internal {
     pub system_id: Uuid,
     nodes: tokio::sync::Mutex<Vec<String>>,
-    sender_clone: Sender<u8>,
-    sender: Sender<String>,
+    task_sender_clone: Sender<Task>,
+    launch_result_sender: Sender<MicroVmLaunch>,
+    shutdown_result_sender: Sender<MicroVmShutdown>,
 }
 
 impl Internal {
     pub async fn init(
-        sender_clone: Sender<u8>,
-        sender: Sender<String>,
+        task_sender_clone: Sender<Task>,
+        launch_result_sender: Sender<MicroVmLaunch>,
+        shutdown_result_sender: Sender<MicroVmShutdown>,
     ) -> Result<Internal, Box<dyn std::error::Error>> {
         let system_id = Uuid::new_v4();
         let nodes = tokio::sync::Mutex::new(Vec::with_capacity(20));
@@ -32,8 +32,9 @@ impl Internal {
         Ok(Internal {
             system_id,
             nodes,
-            sender_clone,
-            sender,
+            task_sender_clone,
+            launch_result_sender,
+            shutdown_result_sender,
         })
     }
 }
@@ -42,7 +43,8 @@ impl Internal {
 impl Interface for Internal {
     async fn register(&self, request: Request<NodeId>) -> Result<Response<SystemId>, Status> {
         println!(
-            ":: i m p u l s e _ i n t e r f a c e > New register request! | {}",
+            "{} New register request! | {}",
+            IMPULSE_INTERFACE,
             request.get_ref().node_id,
         );
 
@@ -51,7 +53,7 @@ impl Interface for Internal {
 
         nodes.push(node);
 
-        println!(":: i m p u l s e _ i n t e r f a c e > Node Registered!");
+        println!("{} Node Registered!", IMPULSE_INTERFACE);
 
         let system_id = SystemId {
             system_id: self.system_id.to_string(),
@@ -68,7 +70,8 @@ impl Interface for Internal {
         request: tonic::Request<NodeId>,
     ) -> Result<tonic::Response<Self::ControllerStream>, tonic::Status> {
         println!(
-            ":: i m p u l s e _ i n t e r f a c e > Node connected and awaiting tasks | {}",
+            "{} Node connected and awaiting tasks | {}",
+            IMPULSE_INTERFACE,
             request.get_ref().node_id,
         );
 
@@ -76,28 +79,18 @@ impl Interface for Internal {
 
         if nodes.contains(&request.get_ref().node_id) {
             let (tx, rx) = tokio::sync::mpsc::channel(4);
-            let mut receiver = self.sender_clone.subscribe();
+            let mut receiver = self.task_sender_clone.subscribe();
 
             tokio::spawn(async move {
-                while let Ok(msg) = receiver.recv().await {
-                    match msg {
+                while let Ok(task) = receiver.recv().await {
+                    match task.action {
                         1 => {
-                            println!(
-                                ":: i m p u l s e _ i n t e r f a c e > Received start instance request",
-                            );
-
-                            let id = Uuid::new_v4().to_simple().to_string();
-                            let task = Task { action: 1, id };
+                            println!("{} Received start instance request", IMPULSE_INTERFACE);
 
                             tx.send(Ok(task)).await.unwrap();
                         }
                         2 => {
-                            println!(
-                                ":: i m p u l s e _ i n t e r f a c e > Received shutdown instance request",
-                            );
-
-                            let id = Uuid::new_v4().to_simple().to_string();
-                            let task = Task { action: 2, id };
+                            println!("{}Received shutdown instance request", IMPULSE_INTERFACE);
 
                             tx.send(Ok(task)).await.unwrap();
                         }
@@ -114,10 +107,29 @@ impl Interface for Internal {
         }
     }
 
-    async fn result(&self, request: Request<TaskResult>) -> Result<Response<SystemId>, Status> {
-        self.sender
-            .send(request.get_ref().uuid.to_string())
-            .unwrap();
+    async fn launch_result(
+        &self,
+        request: Request<MicroVmLaunch>,
+    ) -> Result<Response<SystemId>, Status> {
+        let task_result = request.into_inner();
+
+        self.launch_result_sender.send(task_result).unwrap();
+
+        let system_id = SystemId {
+            system_id: self.system_id.to_string(),
+        };
+        let response = Response::new(system_id);
+
+        Ok(response)
+    }
+
+    async fn shutdown_result(
+        &self,
+        request: Request<MicroVmShutdown>,
+    ) -> Result<Response<SystemId>, Status> {
+        let task_result = request.into_inner();
+
+        self.shutdown_result_sender.send(task_result).unwrap();
 
         let system_id = SystemId {
             system_id: self.system_id.to_string(),
@@ -163,7 +175,9 @@ mod tests {
     async fn init() -> Result<(), Box<dyn std::error::Error>> {
         let (test_tx, _test_rx) = tokio::sync::broadcast::channel(1);
         let (test_response_sender, _test_rx) = tokio::sync::broadcast::channel(1);
-        let test_internal = Internal::init(test_tx, test_response_sender).await?;
+        let (test_shutdown_result_sender, _test_rx) = tokio::sync::broadcast::channel(1);
+        let test_internal =
+            Internal::init(test_tx, test_response_sender, test_shutdown_result_sender).await?;
         let test_nodes = test_internal.nodes.lock().await;
         assert_eq!(test_internal.system_id.get_version_num(), 4);
         assert_eq!(test_nodes.len(), 0);
@@ -175,7 +189,9 @@ mod tests {
     async fn register() -> Result<(), Box<dyn std::error::Error>> {
         let (test_tx, _test_rx) = tokio::sync::broadcast::channel(1);
         let (test_response_sender, _test_rx) = tokio::sync::broadcast::channel(1);
-        let test_internal = Internal::init(test_tx, test_response_sender).await?;
+        let (test_shutdown_result_sender, _test_rx) = tokio::sync::broadcast::channel(1);
+        let test_internal =
+            Internal::init(test_tx, test_response_sender, test_shutdown_result_sender).await?;
         let test_nodes = test_internal.nodes.lock().await;
         assert_eq!(test_nodes.len(), 0);
         drop(test_nodes);
@@ -196,7 +212,13 @@ mod tests {
         let (test_tx, _test_rx) = tokio::sync::broadcast::channel(1);
         let test_tx_clone = test_tx.clone();
         let (test_response_sender, _test_rx) = tokio::sync::broadcast::channel(1);
-        let test_internal = Internal::init(test_tx_clone, test_response_sender).await?;
+        let (test_shutdown_result_sender, _test_rx) = tokio::sync::broadcast::channel(1);
+        let test_internal = Internal::init(
+            test_tx_clone,
+            test_response_sender,
+            test_shutdown_result_sender,
+        )
+        .await?;
         let mut test_nodes = test_internal.nodes.lock().await;
         test_nodes.push(String::from("test_uuid"));
         drop(test_nodes);
@@ -204,7 +226,11 @@ mod tests {
             node_id: String::from("test_uuid"),
         });
         let test_internal_controller = test_internal.controller(test_request).await?;
-        test_tx.send(1).unwrap();
+        let test_task = Task {
+            action: 1,
+            id: Uuid::new_v4().to_simple().to_string(),
+        };
+        test_tx.send(test_task).unwrap();
         drop(test_tx);
         drop(test_internal);
         let mut test_internal_controller_receiver = test_internal_controller.into_inner();
@@ -223,11 +249,21 @@ mod tests {
         let (test_tx, _test_rx) = tokio::sync::broadcast::channel(1);
         let test_tx_clone = test_tx.clone();
         let (test_response_sender, _test_rx) = tokio::sync::broadcast::channel(1);
-        let test_internal = Internal::init(test_tx_clone, test_response_sender).await?;
+        let (test_shutdown_result_sender, _test_rx) = tokio::sync::broadcast::channel(1);
+        let test_internal = Internal::init(
+            test_tx_clone,
+            test_response_sender,
+            test_shutdown_result_sender,
+        )
+        .await?;
         let test_request = Request::new(NodeId {
             node_id: String::from("test_uuid"),
         });
-        test_tx.send(1).unwrap();
+        let test_task = Task {
+            action: 1,
+            id: Uuid::new_v4().to_simple().to_string(),
+        };
+        test_tx.send(test_task).unwrap();
         let test_internal_controller = test_internal.controller(test_request).await;
         assert_eq!(
             test_internal_controller.as_ref().unwrap_err().code(),
@@ -240,27 +276,31 @@ mod tests {
         Ok(())
     }
 
-    #[tokio::test(flavor = "multi_thread")]
-    async fn result() -> Result<(), Box<dyn std::error::Error>> {
-        let (test_tx, _test_rx) = tokio::sync::broadcast::channel(1);
-        let test_tx_clone = test_tx.clone();
-        let (test_response_sender, _test_rx) = tokio::sync::broadcast::channel(1);
-        let test_internal = Internal::init(test_tx_clone, test_response_sender).await?;
-        let test_request = Request::new(TaskResult {
-            uuid: String::from("test_uuid"),
-        });
-        let test_internal_result = test_internal.result(test_request).await?;
-        let test_internal_result_uuid =
-            Uuid::from_str(test_internal_result.get_ref().system_id.as_str()).unwrap();
-        assert_eq!(test_internal_result_uuid.get_version_num(), 4);
-        Ok(())
-    }
+    // #[tokio::test(flavor = "multi_thread")]
+    // async fn result() -> Result<(), Box<dyn std::error::Error>> {
+    //     let (test_tx, _test_rx) = tokio::sync::broadcast::channel(1);
+    //     let test_tx_clone = test_tx.clone();
+    //     let (test_response_sender, _test_rx) = tokio::sync::broadcast::channel(1);
+    //     let (test_shutdown_result_sender, _test_rx) = tokio::sync::broadcast::channel(1);
+    //     let test_internal =
+    //         Internal::init(test_tx, test_response_sender, test_shutdown_result_sender).await?;
+    //     let test_request = Request::new(TaskResult {
+    //         uuid: String::from("test_uuid"),
+    //     });
+    //     let test_internal_result = test_internal.result(test_request).await?;
+    //     let test_internal_result_uuid =
+    //         Uuid::from_str(test_internal_result.get_ref().system_id.as_str()).unwrap();
+    //     assert_eq!(test_internal_result_uuid.get_version_num(), 4);
+    //     Ok(())
+    // }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn delist_response() -> Result<(), Box<dyn std::error::Error>> {
         let (test_tx, _test_rx) = tokio::sync::broadcast::channel(1);
         let (test_response_sender, _test_rx) = tokio::sync::broadcast::channel(1);
-        let test_internal = Internal::init(test_tx, test_response_sender).await?;
+        let (test_shutdown_result_sender, _test_rx) = tokio::sync::broadcast::channel(1);
+        let test_internal =
+            Internal::init(test_tx, test_response_sender, test_shutdown_result_sender).await?;
         let mut test_nodes = test_internal.nodes.lock().await;
         test_nodes.push(String::from("test_uuid"));
         assert_eq!(test_nodes.len(), 1);
@@ -281,7 +321,9 @@ mod tests {
     async fn delist_status() -> Result<(), Box<dyn std::error::Error>> {
         let (test_tx, _test_rx) = tokio::sync::broadcast::channel(1);
         let (test_response_sender, _test_rx) = tokio::sync::broadcast::channel(1);
-        let test_internal = Internal::init(test_tx, test_response_sender).await?;
+        let (test_shutdown_result_sender, _test_rx) = tokio::sync::broadcast::channel(1);
+        let test_internal =
+            Internal::init(test_tx, test_response_sender, test_shutdown_result_sender).await?;
         let mut test_nodes = test_internal.nodes.lock().await;
         test_nodes.push(String::from("test_uuid"));
         assert_eq!(test_nodes.len(), 1);
