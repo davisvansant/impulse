@@ -1,20 +1,6 @@
 [workspace]
 members = [
-  "builds/impulse_proto",
-  "deps/impulse_prost",
-  "deps/impulse_rand",
-  "deps/impulse_serde",
-  "deps/impulse_serde_json",
-  "deps/impulse_tokio",
-  "deps/impulse_tonic",
-  "deps/impulse_uuid",
-  "impulse",
-  "impulse_actuator",
-  "impulse_interface",
-  "libs/impulse_actuator_engine",
-  "libs/impulse_actuator_internal",
-  "libs/impulse_interface_external",
-  "libs/impulse_interface_internal",
+  "system",
 ]
 
 resolver = "2"
