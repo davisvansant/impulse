@@ -1,74 +1,73 @@
-pub use internal_v010::interface_client::InterfaceClient;
-pub use internal_v010::{NodeId, SystemId, Task, TaskResult};
-
 use tonic::transport::Channel;
 use tonic::{Request, Response, Status, Streaming};
 
 use uuid::Uuid;
 
-mod internal_v010 {
-    include!("../../../proto/impulse.internal.v010.rs");
-}
-
-pub enum InterfaceClientRequest {
-    Register,
-    Controller,
-    Delist,
-}
-
-impl InterfaceClientRequest {
-    pub async fn build(&self, node_id: &Uuid) -> Request<NodeId> {
-        Request::new(NodeId {
-            node_id: node_id.to_string(),
-        })
-    }
-}
+use crate::impulse::internal::v010::interface_client::InterfaceClient;
+use crate::impulse::internal::v010::{NodeId, SystemId};
+use crate::impulse::shared::v010::{MicroVmLaunch, MicroVmShutdown, Task};
 
 pub struct Internal {
-    client: InterfaceClient<Channel>,
+    transport: InterfaceClient<Channel>,
     pub node_id: Uuid,
 }
 
 impl Internal {
     pub async fn init(endpoint: &'static str) -> Result<Internal, Box<dyn std::error::Error>> {
-        let client = InterfaceClient::connect(endpoint).await?;
+        let transport = InterfaceClient::connect(endpoint).await?;
         let node_id = Uuid::new_v4();
 
-        Ok(Internal { client, node_id })
+        Ok(Internal { transport, node_id })
     }
 
     pub async fn register(&mut self) -> Result<tonic::Response<SystemId>, tonic::Status> {
-        let mut client = self.client.clone();
-        let request = InterfaceClientRequest::Register.build(&self.node_id).await;
-        let response = client.register(request).await?;
+        let mut transport = self.transport.clone();
+        let request = Request::new(NodeId {
+            node_id: self.node_id.to_string(),
+        });
+        let response = transport.register(request).await?;
 
         Ok(response)
     }
 
     pub async fn controller(&mut self) -> Result<Response<Streaming<Task>>, Status> {
-        let mut client = self.client.clone();
-        let request = InterfaceClientRequest::Controller
-            .build(&self.node_id)
-            .await;
-        let response = client.controller(request).await?;
+        let mut transport = self.transport.clone();
+        let request = Request::new(NodeId {
+            node_id: self.node_id.to_string(),
+        });
+        let response = transport.controller(request).await?;
 
         Ok(response)
     }
 
-    pub async fn result(&mut self, uuid: &str) -> Result<Response<SystemId>, Status> {
-        let mut client = self.client.clone();
-        let request = Request::new(TaskResult {
-            uuid: uuid.to_string(),
+    pub async fn launch_result(&mut self, uuid: &str) -> Result<Response<SystemId>, Status> {
+        let mut transport = self.transport.clone();
+        let request = Request::new(MicroVmLaunch {
+            launched: true,
+            details: uuid.to_string(),
         });
-        let response = client.result(request).await?;
+        let response = transport.launch_result(request).await?;
+
+        Ok(response)
+    }
+
+    pub async fn shutdown_result(&mut self, uuid: &str) -> Result<Response<SystemId>, Status> {
+        let mut transport = self.transport.clone();
+        let request = Request::new(MicroVmShutdown {
+            shutdown: true,
+            details: uuid.to_string(),
+        });
+        let response = transport.shutdown_result(request).await?;
 
         Ok(response)
     }
 
     pub async fn delist(&mut self) -> Result<Response<SystemId>, Status> {
-        let mut client = self.client.clone();
-        let request = InterfaceClientRequest::Delist.build(&self.node_id).await;
-        let response = client.delist(request).await?;
+        let mut transport = self.transport.clone();
+        let request = Request::new(NodeId {
+            node_id: self.node_id.to_string(),
+        });
+        let response = transport.delist(request).await?;
 
         Ok(response)
     }
@@ -76,42 +75,42 @@ impl Internal {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use std::str::FromStr;
-
-    const TEST_ADDR: &str = "127.0.0.1:1284";
-    const TEST_ENDPOINT: &str = "http://127.0.0.1:1284";
-    const TEST_UUID: Uuid = Uuid::nil();
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn interface_client_request_register() -> Result<(), Box<dyn std::error::Error>> {
-        let test_request = InterfaceClientRequest::Register.build(&TEST_UUID).await;
-        assert_eq!(
-            test_request.get_ref().node_id.as_str(),
-            "00000000-0000-0000-0000-000000000000",
-        );
-        Ok(())
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn interface_client_request_controller() -> Result<(), Box<dyn std::error::Error>> {
-        let test_request = InterfaceClientRequest::Controller.build(&TEST_UUID).await;
-        assert_eq!(
-            test_request.get_ref().node_id.as_str(),
-            "00000000-0000-0000-0000-000000000000",
-        );
-        Ok(())
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn interface_client_request_delist() -> Result<(), Box<dyn std::error::Error>> {
-        let test_request = InterfaceClientRequest::Delist.build(&TEST_UUID).await;
-        assert_eq!(
-            test_request.get_ref().node_id.as_str(),
-            "00000000-0000-0000-0000-000000000000",
-        );
-        Ok(())
-    }
+    // use super::*;
+    // use std::str::FromStr;
+    //
+    // const TEST_ADDR: &str = "127.0.0.1:1284";
+    // const TEST_ENDPOINT: &str = "http://127.0.0.1:1284";
+    // const TEST_UUID: Uuid = Uuid::nil();
+    //
+    // #[tokio::test(flavor = "multi_thread")]
+    // async fn internal_request_register() -> Result<(), Box<dyn std::error::Error>> {
+    //     let test_request = InternalRequest::Register.build(&TEST_UUID).await;
+    //     assert_eq!(
+    //         test_request.get_ref().node_id.as_str(),
+    //         "00000000-0000-0000-0000-000000000000",
+    //     );
+    //     Ok(())
+    // }
+    //
+    // #[tokio::test(flavor = "multi_thread")]
+    // async fn internal_request_controller() -> Result<(), Box<dyn std::error::Error>> {
+    //     let test_request = InternalRequest::Controller.build(&TEST_UUID).await;
+    //     assert_eq!(
+    //         test_request.get_ref().node_id.as_str(),
+    //         "00000000-0000-0000-0000-000000000000",
+    //     );
+    //     Ok(())
+    // }
+    //
+    // #[tokio::test(flavor = "multi_thread")]
+    // async fn internal_request_delist() -> Result<(), Box<dyn std::error::Error>> {
+    //     let test_request = InternalRequest::Delist.build(&TEST_UUID).await;
+    //     assert_eq!(
+    //         test_request.get_ref().node_id.as_str(),
+    //         "00000000-0000-0000-0000-000000000000",
+    //     );
+    //     Ok(())
+    // }
 
     // #[tokio::test(flavor = "multi_thread")]
     // async fn init() -> Result<(), Box<dyn std::error::Error>> {
