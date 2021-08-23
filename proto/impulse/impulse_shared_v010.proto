@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package impulse.shared.v010;
+
+message Empty {}
+
+message Task {
+  enum Action {
+    ACTION_UNSPECIFIED = 0;
+    INSTANCE_START = 1;
+    SEND_CTRL_ALT_DEL = 2;
+  }
+  Action action = 1;
+  string id = 2;
+}
+
+message MicroVMLaunch {
+  bool launched = 1;
+  string details =2;
+}
+
+message MicroVMShutdown {
+  bool shutdown = 1;
+  string details = 2;
+}
