@@ -2,10 +2,13 @@ syntax = "proto3";
 
 package impulse.internal.v010;
 
+import "impulse_shared_v010.proto";
+
 service Interface {
   rpc Register (NodeId) returns (SystemId) {}
-  rpc Controller (NodeId) returns (stream Task) {}
-  rpc Result (TaskResult) returns (SystemId) {}
+  rpc Controller (NodeId) returns (stream shared.v010.Task) {}
+  rpc LaunchResult (impulse.shared.v010.MicroVMLaunch) returns (SystemId) {}
+  rpc ShutdownResult (impulse.shared.v010.MicroVMShutdown) returns (SystemId) {}
   rpc Delist (NodeId) returns (SystemId) {}
 }
 
@@ -15,18 +18,4 @@ message NodeId {
 
 message SystemId {
   string system_id = 1;
-}
-
-message Task {
-  enum Action {
-    ACTION_UNSPECIFIED = 0;
-    INSTANCE_START = 1;
-    SEND_CTRL_ALT_DEL = 2;
-  }
-  Action action = 1;
-  string id = 2;
-}
-
-message TaskResult {
-  string uuid = 1;
 }
