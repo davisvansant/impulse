@@ -2,28 +2,27 @@ use tonic::{Request, Response, Status};
 
 use tokio::sync::broadcast::Sender;
 
-pub use external_v010::interface_server::{Interface, InterfaceServer};
-pub use external_v010::{
-    Empty, LaunchVmResponse, MicroVm, ShutdownVmResponse, SystemStatusResponse,
-    SystemVersionResponse,
-};
+use uuid::Uuid;
 
-mod external_v010 {
-    include!("../../../proto/impulse.external.v010.rs");
-}
+use crate::impulse::external::v010::{MicroVm, SystemStatusResponse, SystemVersionResponse};
+use crate::impulse::shared::v010::{Empty, MicroVmLaunch, MicroVmShutdown, Task};
+use crate::IMPULSE_INTERFACE;
 
-// #[derive(Default)]
+pub use crate::impulse::external::v010::interface_server::{Interface, InterfaceServer};
+
 pub struct External {
     status: String,
     pub version: String,
-    sender: Sender<u8>,
-    sender_clone: Sender<String>,
+    task_sender: Sender<Task>,
+    launch_result_sender_clone: Sender<MicroVmLaunch>,
+    shutdown_result_sender_clone: Sender<MicroVmShutdown>,
 }
 
 impl External {
     pub async fn init(
-        sender: Sender<u8>,
-        sender_clone: Sender<String>,
+        task_sender: Sender<Task>,
+        launch_result_sender_clone: Sender<MicroVmLaunch>,
+        shutdown_result_sender_clone: Sender<MicroVmShutdown>,
     ) -> Result<External, Box<dyn std::error::Error>> {
         let status = String::from("Running!");
         let version = String::from("v0.1.0");
@@ -31,8 +30,9 @@ impl External {
         Ok(External {
             status,
             version,
-            sender,
-            sender_clone,
+            task_sender,
+            launch_result_sender_clone,
+            shutdown_result_sender_clone,
         })
     }
 }
@@ -63,35 +63,31 @@ impl Interface for External {
         Ok(response)
     }
 
-    async fn launch_vm(
-        &self,
-        request: Request<MicroVm>,
-    ) -> Result<Response<LaunchVmResponse>, Status> {
+    async fn launch_vm(&self, request: Request<Empty>) -> Result<Response<MicroVmLaunch>, Status> {
         println!(
-            ":: i m p u l s e _ i n t e r f a c e > Incoming launch request | {:?}",
+            "{} Incoming launch request | {:?}",
+            IMPULSE_INTERFACE,
             request.get_ref(),
         );
         println!(
-            ":: i m p u l s e _ i n t e r f a c e > Sending request to connected nodes | {:?}",
-            &self.sender.receiver_count(),
+            "{} Sending request to connected nodes | {:?}",
+            IMPULSE_INTERFACE,
+            &self.task_sender.receiver_count(),
         );
 
-        if let Ok(msg) = &self.sender.send(1) {
-            println!(
-                ":: i m p u l s e _ i n t e r f a c e > Message sent | {:?}",
-                &msg,
-            );
+        let task = Task {
+            action: 1,
+            id: Uuid::new_v4().to_simple().to_string(),
+        };
+
+        if let Ok(msg) = &self.task_sender.send(task) {
+            println!("{} Message sent | {:?}", IMPULSE_INTERFACE, &msg);
         }
 
-        let mut receiver = self.sender_clone.subscribe();
+        let mut receiver = self.launch_result_sender_clone.subscribe();
 
         if let Ok(message) = receiver.recv().await {
-            let launch_vm = LaunchVmResponse {
-                launched: true,
-                details: message,
-            };
-
-            let response = Response::new(launch_vm);
+            let response = Response::new(message);
 
             Ok(response)
         } else {
@@ -104,26 +100,26 @@ impl Interface for External {
     async fn shutdown_vm(
         &self,
         request: Request<MicroVm>,
-    ) -> Result<Response<ShutdownVmResponse>, Status> {
-        match request.into_inner().name.as_str() {
-            "tester" => {
-                println!("{:?}", &self.sender.receiver_count());
-                if let Ok(msg) = &self.sender.send(2) {
-                    println!("Message sent - {:?}", msg);
-                }
+    ) -> Result<Response<MicroVmShutdown>, Status> {
+        let task = Task {
+            action: 2,
+            id: request.into_inner().name,
+        };
 
-                let shutdown_vm = ShutdownVmResponse {
-                    shutdown: true,
-                    details: String::from("vm has been shutdown!"),
-                };
-                let response = Response::new(shutdown_vm);
-                Ok(response)
-            }
-            _ => {
-                let message = String::from("The requested VM was not found... please try again!");
-                let status = Status::new(tonic::Code::NotFound, message);
-                Err(status)
-            }
+        if let Ok(task) = &self.task_sender.send(task) {
+            println!("Message sent - {:?}", task);
+        }
+
+        let mut receiver = self.shutdown_result_sender_clone.subscribe();
+
+        if let Ok(message) = receiver.recv().await {
+            let response = Response::new(message);
+
+            Ok(response)
+        } else {
+            let message = String::from("Something went wrong!");
+            let status = Status::new(tonic::Code::NotFound, message);
+            Err(status)
         }
     }
 }
@@ -137,7 +133,14 @@ mod tests {
         let (test_tx, _rx) = tokio::sync::broadcast::channel(1);
         let (test_response_sender, _) = tokio::sync::broadcast::channel(1);
         let test_response_sender_clone = test_response_sender.clone();
-        let test_external = External::init(test_tx, test_response_sender_clone).await?;
+        let (test_shutdown_result_sender, _) = tokio::sync::broadcast::channel(1);
+        let test_shutdown_result_sender_clone = test_shutdown_result_sender.clone();
+        let test_external = External::init(
+            test_tx,
+            test_response_sender_clone,
+            test_shutdown_result_sender_clone,
+        )
+        .await?;
         assert_eq!(test_external.status.as_str(), "Running!");
         assert_eq!(test_external.version.as_str(), "v0.1.0");
         Ok(())
@@ -148,7 +151,14 @@ mod tests {
         let (test_tx, _rx) = tokio::sync::broadcast::channel(1);
         let (test_response_sender, _) = tokio::sync::broadcast::channel(1);
         let test_response_sender_clone = test_response_sender.clone();
-        let test_external = External::init(test_tx, test_response_sender_clone).await?;
+        let (test_shutdown_result_sender, _) = tokio::sync::broadcast::channel(1);
+        let test_shutdown_result_sender_clone = test_shutdown_result_sender.clone();
+        let test_external = External::init(
+            test_tx,
+            test_response_sender_clone,
+            test_shutdown_result_sender_clone,
+        )
+        .await?;
         let test_request = Request::new(Empty {});
         let test_external_system_status = test_external.system_status(test_request).await?;
         assert_eq!(
@@ -163,7 +173,14 @@ mod tests {
         let (test_tx, _rx) = tokio::sync::broadcast::channel(1);
         let (test_response_sender, _) = tokio::sync::broadcast::channel(1);
         let test_response_sender_clone = test_response_sender.clone();
-        let test_external = External::init(test_tx, test_response_sender_clone).await?;
+        let (test_shutdown_result_sender, _) = tokio::sync::broadcast::channel(1);
+        let test_shutdown_result_sender_clone = test_shutdown_result_sender.clone();
+        let test_external = External::init(
+            test_tx,
+            test_response_sender_clone,
+            test_shutdown_result_sender_clone,
+        )
+        .await?;
         let test_request = Request::new(Empty {});
         let test_external_system_version = test_external.system_version(test_request).await?;
         assert_eq!(
@@ -179,10 +196,15 @@ mod tests {
         let (test_response_sender, _test_response_rx) = tokio::sync::broadcast::channel(1);
         let test_response_sender_clone = test_response_sender.clone();
         drop(_test_response_rx);
-        let test_external = External::init(test_tx, test_response_sender_clone).await?;
-        let test_request = Request::new(MicroVm {
-            name: String::from("tester"),
-        });
+        let (test_shutdown_result_sender, _) = tokio::sync::broadcast::channel(1);
+        let test_shutdown_result_sender_clone = test_shutdown_result_sender.clone();
+        let test_external = External::init(
+            test_tx,
+            test_response_sender_clone,
+            test_shutdown_result_sender_clone,
+        )
+        .await?;
+        let test_request = Request::new(Empty {});
         let test_result = tokio::spawn(async move {
             let test_external_launch_vm = test_external.launch_vm(test_request).await.unwrap();
             assert!(test_external_launch_vm.get_ref().launched);
@@ -194,68 +216,52 @@ mod tests {
         if test_response_sender.receiver_count() == 0 {
             tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
         }
+        let test_instance_start = MicroVmLaunch {
+            launched: true,
+            details: String::from("test_uuid"),
+        };
         test_response_sender
-            .send(String::from("test_uuid"))
+            .send(test_instance_start)
             .expect("could not send!");
         assert!(test_result.await.is_ok());
         Ok(())
     }
 
-    // #[tokio::test(flavor = "multi_thread")]
-    // async fn launch_vm_status() -> Result<(), Box<dyn std::error::Error>> {
-    //     let (test_tx, _rx) = tokio::sync::broadcast::channel(1);
-    //     let test_external = External::init(test_tx).await?;
-    //     let test_request = Request::new(MicroVm {
-    //         name: String::from("not tester"),
-    //     });
-    //     let test_external_launch_vm = test_external.launch_vm(test_request).await;
-    //     assert_eq!(
-    //         test_external_launch_vm.as_ref().unwrap_err().code(),
-    //         tonic::Code::NotFound,
-    //     );
-    //     assert_eq!(
-    //         test_external_launch_vm.as_ref().unwrap_err().message(),
-    //         "The requested VM was not found... please try again!",
-    //     );
-    //     Ok(())
-    // }
-
     #[tokio::test(flavor = "multi_thread")]
-    async fn shutdown_vm_response() -> Result<(), Box<dyn std::error::Error>> {
+    async fn shutdown_vm() -> Result<(), Box<dyn std::error::Error>> {
         let (test_tx, _rx) = tokio::sync::broadcast::channel(1);
         let (test_response_sender, _) = tokio::sync::broadcast::channel(1);
         let test_response_sender_clone = test_response_sender.clone();
-        let test_external = External::init(test_tx, test_response_sender_clone).await?;
+        let (test_shutdown_result_sender, _) = tokio::sync::broadcast::channel(1);
+        let test_shutdown_result_sender_clone = test_shutdown_result_sender.clone();
+        let test_external = External::init(
+            test_tx,
+            test_response_sender_clone,
+            test_shutdown_result_sender_clone,
+        )
+        .await?;
         let test_request = Request::new(MicroVm {
             name: String::from("tester"),
         });
-        let test_external_shutdown_vm = test_external.shutdown_vm(test_request).await?;
-        assert!(test_external_shutdown_vm.get_ref().shutdown);
-        assert_eq!(
-            test_external_shutdown_vm.get_ref().details.as_str(),
-            "vm has been shutdown!",
-        );
-        Ok(())
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn shutdown_vm_status() -> Result<(), Box<dyn std::error::Error>> {
-        let (test_tx, _rx) = tokio::sync::broadcast::channel(1);
-        let (test_response_sender, _) = tokio::sync::broadcast::channel(1);
-        let test_response_sender_clone = test_response_sender.clone();
-        let test_external = External::init(test_tx, test_response_sender_clone).await?;
-        let test_request = Request::new(MicroVm {
-            name: String::from("not tester"),
+        let test_result = tokio::spawn(async move {
+            let test_external_shutdown_vm = test_external.shutdown_vm(test_request).await.unwrap();
+            assert!(test_external_shutdown_vm.get_ref().shutdown);
+            assert_eq!(
+                test_external_shutdown_vm.get_ref().details.as_str(),
+                "test_uuid",
+            );
         });
-        let test_external_shutdown_vm = test_external.shutdown_vm(test_request).await;
-        assert_eq!(
-            test_external_shutdown_vm.as_ref().unwrap_err().code(),
-            tonic::Code::NotFound,
-        );
-        assert_eq!(
-            test_external_shutdown_vm.as_ref().unwrap_err().message(),
-            "The requested VM was not found... please try again!",
-        );
+        if test_shutdown_result_sender.receiver_count() == 0 {
+            tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+        }
+        let test_instance_shutdown = MicroVmShutdown {
+            shutdown: true,
+            details: String::from("test_uuid"),
+        };
+        test_shutdown_result_sender
+            .send(test_instance_shutdown)
+            .expect("could not send!");
+        assert!(test_result.await.is_ok());
         Ok(())
     }
 }
