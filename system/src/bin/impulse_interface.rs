@@ -1,48 +1,61 @@
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+
+use tokio::sync::broadcast::channel;
+
+use system::external_interface::{External, InterfaceServer as ExternalInterfaceServer};
+use system::internal_interface::{InterfaceServer as InternalInterfaceServer, Internal};
+use system::IMPULSE_INTERFACE;
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let ipv4_addr = std::net::Ipv4Addr::new(0, 0, 0, 0);
+    let ipv4_addr = Ipv4Addr::new(0, 0, 0, 0);
     let port = 1284;
-    let socket_addr = std::net::SocketAddr::new(std::net::IpAddr::V4(ipv4_addr), port);
+    let socket_addr = SocketAddr::new(IpAddr::V4(ipv4_addr), port);
 
-    let (tx, _) = tokio::sync::broadcast::channel(1);
-    let sender_clone = tx.clone();
+    let (task_sender, _) = channel(4);
+    let task_sender_clone = task_sender.clone();
 
-    let (response_tx, _) = tokio::sync::broadcast::channel(1);
-    let response_sender_clone = response_tx.clone();
+    let (launch_result_sender, _) = channel(4);
+    let launch_result_sender_clone = launch_result_sender.clone();
 
-    let external_interface =
-        impulse_interface_external::External::init(tx, response_sender_clone).await?;
-    let internal_interface =
-        impulse_interface_internal::Internal::init(sender_clone, response_tx).await?;
+    let (shutdown_result_sender, _) = channel(4);
+    let shutdown_result_sender_clone = shutdown_result_sender.clone();
+
+    let external_interface = External::init(
+        task_sender,
+        launch_result_sender_clone,
+        shutdown_result_sender_clone,
+    )
+    .await?;
+
+    let internal_interface = Internal::init(
+        task_sender_clone,
+        launch_result_sender,
+        shutdown_result_sender,
+    )
+    .await?;
+
+    println!("{} Launching system | {}", IMPULSE_INTERFACE, &socket_addr);
 
     println!(
-        ":: i m p u l s e _ i n t e r f a c e > Launching system | {}",
-        &socket_addr,
+        "{} System Version | {}",
+        IMPULSE_INTERFACE, &external_interface.version,
     );
 
     println!(
-        ":: i m p u l s e _ i n t e r f a c e > System Version | {}",
-        &external_interface.version,
-    );
-
-    println!(
-        ":: i m p u l s e _ i n t e r f a c e > System id | {}",
-        &internal_interface.system_id,
+        "{} System id | {}",
+        IMPULSE_INTERFACE, &internal_interface.system_id,
     );
 
     let ctrl_c = async move {
-        println!(":: i m p u l s e _ i n t e r f a c e > Running...");
+        println!("{} Running...", IMPULSE_INTERFACE);
         tokio::signal::ctrl_c().await.unwrap();
-        println!(":: i m p u l s e _ i n t e r f a c e > Shutting down...");
+        println!("{} > Shutting down...", IMPULSE_INTERFACE);
     };
 
     tonic::transport::Server::builder()
-        .add_service(impulse_interface_external::InterfaceServer::new(
-            external_interface,
-        ))
-        .add_service(impulse_interface_internal::InterfaceServer::new(
-            internal_interface,
-        ))
+        .add_service(ExternalInterfaceServer::new(external_interface))
+        .add_service(InternalInterfaceServer::new(internal_interface))
         .serve_with_shutdown(socket_addr, ctrl_c)
         .await?;
 
