@@ -2,14 +2,14 @@ syntax = "proto3";
 
 package impulse.external.v010;
 
-service Interface {
-  rpc SystemStatus (Empty) returns (SystemStatusResponse) {}
-  rpc SystemVersion (Empty) returns (SystemVersionResponse) {}
-  rpc LaunchVM (MicroVM) returns (LaunchVMResponse) {}
-  rpc ShutdownVM (MicroVM) returns (ShutdownVMResponse) {}
-}
+import "impulse_shared_v010.proto";
 
-message Empty {}
+service Interface {
+  rpc SystemStatus (impulse.shared.v010.Empty) returns (SystemStatusResponse) {}
+  rpc SystemVersion (impulse.shared.v010.Empty) returns (SystemVersionResponse) {}
+  rpc LaunchVM (impulse.shared.v010.Empty) returns (impulse.shared.v010.MicroVMLaunch) {}
+  rpc ShutdownVM (MicroVM) returns (impulse.shared.v010.MicroVMShutdown) {}
+}
 
 message SystemStatusResponse {
   string status = 1;
@@ -21,14 +21,4 @@ message SystemVersionResponse {
 
 message MicroVM {
   string name = 1;
-}
-
-message LaunchVMResponse {
-  bool launched = 1;
-  string details = 2;
-}
-
-message ShutdownVMResponse {
-  bool shutdown = 1;
-  string details = 2;
 }
