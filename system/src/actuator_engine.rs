@@ -8,6 +8,7 @@ use tokio::process::Command;
 use uuid::adapter::Simple;
 use uuid::Uuid;
 
+use crate::IMPULSE_ACTUATOR;
 use layer2::Layer2;
 use layer3::Layer3;
 use micro_vm::MicroVM;
@@ -67,8 +68,8 @@ impl Engine {
 
     pub async fn launch_vm(&mut self, uuid: &str) -> Result<(), Box<dyn std::error::Error>> {
         println!(
-            ":: i m p u l s e _ a c t u a t o r > Preparing to launch new VM | {:?}",
-            uuid,
+            "{} Preparing to launch new VM | {:?}",
+            IMPULSE_ACTUATOR, uuid,
         );
 
         let micro_vm = MicroVM::init(
@@ -79,19 +80,19 @@ impl Engine {
         .await?;
 
         println!(
-            ":: i m p u l s e _ a c t u a t o r > Launching new VM with socket | {:?}",
-            &micro_vm.api_socket,
+            "{} Launching new VM with socket | {:?}",
+            IMPULSE_ACTUATOR, &micro_vm.api_socket,
         );
         println!(
-            ":: i m p u l s e _ a c t u a t o r > Launching new VM with base | {:?}",
-            &micro_vm.base,
+            "{} Launching new VM with base | {:?}",
+            IMPULSE_ACTUATOR, &micro_vm.base,
         );
 
         let config_file = micro_vm.config_file.write(uuid).await?;
 
         println!(
-            ":: i m p u l s e _ a c t u a t o r > Launching new VM with config | {:?}",
-            &config_file,
+            "{} Launching new VM with config | {:?}",
+            IMPULSE_ACTUATOR, &config_file,
         );
 
         micro_vm.ready_boot(&self.images_base).await?;
@@ -119,7 +120,7 @@ impl Engine {
         if command.success() {
             let uuid = Self::parse_uuid(uuid).await?;
             if self.launched_vms.insert(uuid, micro_vm).is_none() {
-                println!(":: i m p u l s e _ a c t u a t o r > Launched!");
+                println!("{} Launched!", IMPULSE_ACTUATOR);
             }
         }
 
@@ -131,10 +132,7 @@ impl Engine {
 
         if self.launched_vms.contains_key(&simple_uuid) {
             if let Some(micro_vm) = self.launched_vms.get(&simple_uuid) {
-                println!(
-                    ":: i m p u l s e _ a c t u a t o r > Shutting down VM | {:?}",
-                    uuid,
-                );
+                println!("{} Shutting down VM | {:?}", IMPULSE_ACTUATOR, uuid);
 
                 let command = Command::new("/usr/bin/systemctl")
                     .arg("stop")
@@ -147,20 +145,17 @@ impl Engine {
                 if command.success() {
                     if let Some(micro_vm) = self.launched_vms.remove(&simple_uuid) {
                         println!(
-                            ":: i m p u l s e _ a c t u a t o r > Removing socket | {:?}",
-                            &micro_vm.api_socket,
+                            "{} Removing socket | {:?}",
+                            IMPULSE_ACTUATOR, &micro_vm.api_socket,
                         );
 
                         micro_vm.cleanup_api_socket().await?;
 
-                        println!(
-                            ":: i m p u l s e _ a c t u a t o r > Removing base | {:?}",
-                            &micro_vm.base,
-                        );
+                        println!("{} Removing base | {:?}", IMPULSE_ACTUATOR, &micro_vm.base);
 
                         micro_vm.cleanup_base().await?;
 
-                        println!(":: i m p u l s e _ a c t u a t o r > Shutdown! |");
+                        println!("{} Shutdown! |", IMPULSE_ACTUATOR);
                     }
                 }
             }
