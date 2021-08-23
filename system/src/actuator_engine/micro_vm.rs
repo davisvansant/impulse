@@ -2,7 +2,7 @@ use std::path::Path;
 
 use tokio::fs::{copy, create_dir_all, metadata, remove_dir_all, remove_file};
 
-use crate::PathBuf;
+use std::path::PathBuf;
 
 use config_file::ConfigFile;
 
@@ -90,7 +90,7 @@ impl MicroVM {
 mod tests {
     use super::*;
 
-    const TEST_MICROVM_UUID: crate::Uuid = crate::Uuid::nil();
+    const TEST_MICROVM_UUID: uuid::Uuid = uuid::Uuid::nil();
     const TEST_SOCKET_BASE: &str = "/tmp/test_impulse_actuator/socket";
     const TEST_WORKING_BASE: &str = "/srv/test_impulse_actuator/";
 
