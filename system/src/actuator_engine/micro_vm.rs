@@ -168,7 +168,9 @@ mod tests {
         )
         .await?;
         tokio::fs::write(&test_micro_vm.api_socket, b"test socket").await?;
+        assert!(metadata(&test_micro_vm.api_socket).await.is_ok());
         let test_cleanup_api_socket = test_micro_vm.cleanup_api_socket().await;
+        assert!(metadata(&test_micro_vm.api_socket).await.is_err());
         assert!(test_cleanup_api_socket.is_ok());
         Ok(())
     }
@@ -197,8 +199,10 @@ mod tests {
         tokio::fs::write(&test_micro_vm.base.join("test_file_1"), b"test base file 1").await?;
         tokio::fs::write(&test_micro_vm.base.join("test_file_2"), b"test base file 2").await?;
         tokio::fs::write(&test_micro_vm.base.join("test_file_3"), b"test base file 3").await?;
+        assert!(metadata(&test_micro_vm.base).await.is_ok());
         let test_cleanup_base = test_micro_vm.cleanup_base().await;
         assert!(test_cleanup_base.is_ok());
+        assert!(metadata(&test_micro_vm.base).await.is_err());
         Ok(())
     }
 
@@ -210,9 +214,11 @@ mod tests {
             Path::new(TEST_WORKING_BASE),
         )
         .await?;
+        assert!(metadata(&test_micro_vm.base).await.is_ok());
         remove_dir_all(&test_micro_vm.base).await?;
         let test_cleanup_base = test_micro_vm.cleanup_base().await;
         assert!(test_cleanup_base.is_ok());
+        assert!(metadata(&test_micro_vm.base).await.is_err());
         Ok(())
     }
 }
