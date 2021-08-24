@@ -142,18 +142,22 @@ impl Engine {
 
                 if command.success() {
                     if let Some(micro_vm) = self.launched_vms.remove(&simple_uuid) {
+                        micro_vm.cleanup_api_socket().await?;
                         println!(
                             "{} Removing socket | {:?}",
                             IMPULSE_ACTUATOR, &micro_vm.api_socket,
                         );
 
-                        micro_vm.cleanup_api_socket().await?;
-
+                        micro_vm.cleanup_base().await?;
                         println!("{} Removing base | {:?}", IMPULSE_ACTUATOR, &micro_vm.base);
 
-                        micro_vm.cleanup_base().await?;
+                        micro_vm.cleanup_config_path().await?;
+                        println!(
+                            "{} Cleanup config file | {:?}",
+                            IMPULSE_ACTUATOR, &micro_vm.base,
+                        );
 
-                        println!("{} Shutdown! |", IMPULSE_ACTUATOR);
+                        println!("{} Shutdown!", IMPULSE_ACTUATOR);
                     }
                 }
             }
