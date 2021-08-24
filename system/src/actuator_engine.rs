@@ -88,11 +88,9 @@ impl Engine {
             IMPULSE_ACTUATOR, &micro_vm.base,
         );
 
-        let config_file = micro_vm.config_file.write(uuid).await?;
-
         println!(
             "{} Launching new VM with config | {:?}",
-            IMPULSE_ACTUATOR, &config_file,
+            IMPULSE_ACTUATOR, &micro_vm.config_path,
         );
 
         micro_vm.ready_boot(&self.images_base).await?;
@@ -111,7 +109,7 @@ impl Engine {
             .arg("--api-sock")
             .arg(&micro_vm.api_socket)
             .arg("--config-file")
-            .arg(&config_file)
+            .arg(&micro_vm.config_path)
             .status()
             .await?;
 
