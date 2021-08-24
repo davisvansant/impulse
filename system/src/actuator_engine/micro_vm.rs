@@ -69,10 +69,8 @@ impl MicroVM {
     }
 
     pub async fn cleanup_api_socket(&self) -> Result<(), Box<dyn std::error::Error>> {
-        if let Ok(metadata) = metadata(&self.api_socket).await {
-            if metadata.is_file() {
-                remove_file(&self.api_socket).await?;
-            }
+        if metadata(&self.api_socket).await.is_ok() {
+            remove_file(&self.api_socket).await?;
         }
 
         Ok(())
