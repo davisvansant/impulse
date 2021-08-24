@@ -11,6 +11,7 @@ mod config_file;
 pub struct MicroVM {
     pub api_socket: PathBuf,
     pub config_file: ConfigFile,
+    pub config_path: PathBuf,
     pub base: PathBuf,
     pub unit_name: String,
     pub unit_slice: String,
@@ -27,6 +28,7 @@ impl MicroVM {
         api_socket.set_extension("socket");
 
         let config_file = ConfigFile::build(&uuid.to_string()).await?;
+        let config_path = config_file.write(uuid).await?;
 
         let mut base = working_base.to_path_buf();
         base.push(&uuid.to_string());
@@ -39,6 +41,7 @@ impl MicroVM {
         Ok(MicroVM {
             api_socket,
             config_file,
+            config_path,
             base,
             unit_name,
             unit_slice,
@@ -108,6 +111,10 @@ mod tests {
             test_micro_vm.api_socket.to_str().unwrap(),
             "/tmp/test_impulse_actuator/socket/00000000000000000000000000000000.socket",
         );
+        assert!(metadata(&test_micro_vm.config_path)
+            .await
+            .unwrap()
+            .is_file());
         assert_eq!(
             test_micro_vm.base.to_str().unwrap(),
             "/srv/test_impulse_actuator/00000000000000000000000000000000",
