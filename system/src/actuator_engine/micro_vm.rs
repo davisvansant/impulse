@@ -87,6 +87,18 @@ impl MicroVM {
 
         Ok(())
     }
+
+    pub async fn cleanup_config_path(&self) -> Result<(), Box<dyn std::error::Error>> {
+        if let Some(parent) = &self.config_path.parent() {
+            if let Ok(metadata) = metadata(parent).await {
+                if metadata.is_dir() {
+                    remove_dir_all(parent).await?;
+                }
+            }
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -226,6 +238,38 @@ mod tests {
         let test_cleanup_base = test_micro_vm.cleanup_base().await;
         assert!(test_cleanup_base.is_ok());
         assert!(metadata(&test_micro_vm.base).await.is_err());
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn cleanup_config_path_ok() -> Result<(), Box<dyn std::error::Error>> {
+        let test_micro_vm = MicroVM::init(
+            TEST_MICROVM_UUID.to_simple().to_string().as_str(),
+            Path::new(TEST_SOCKET_BASE),
+            Path::new(TEST_WORKING_BASE),
+        )
+        .await?;
+        assert!(metadata(&test_micro_vm.config_path).await.is_ok());
+        let test_cleanup_config_path = test_micro_vm.cleanup_config_path().await;
+        assert!(test_cleanup_config_path.is_ok());
+        assert!(metadata(&test_micro_vm.config_path).await.is_err());
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn cleanup_config_path_error() -> Result<(), Box<dyn std::error::Error>> {
+        let test_micro_vm = MicroVM::init(
+            TEST_MICROVM_UUID.to_simple().to_string().as_str(),
+            Path::new(TEST_SOCKET_BASE),
+            Path::new(TEST_WORKING_BASE),
+        )
+        .await?;
+        assert!(metadata(&test_micro_vm.config_path).await.is_ok());
+        remove_dir_all(&test_micro_vm.config_path.parent().unwrap()).await?;
+        assert!(metadata(&test_micro_vm.config_path).await.is_err());
+        let test_cleanup_config_path = test_micro_vm.cleanup_config_path().await;
+        assert!(test_cleanup_config_path.is_ok());
+        assert!(metadata(&test_micro_vm.config_path).await.is_err());
         Ok(())
     }
 }
