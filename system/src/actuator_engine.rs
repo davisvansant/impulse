@@ -129,36 +129,34 @@ impl Engine {
         let simple_uuid = Self::parse_uuid(uuid).await?;
 
         if self.launched_vms.contains_key(&simple_uuid) {
-            if let Some(micro_vm) = self.launched_vms.get(&simple_uuid) {
-                println!("{} Shutting down VM | {:?}", IMPULSE_ACTUATOR, uuid);
+            println!("{} Shutting down VM | {:?}", IMPULSE_ACTUATOR, uuid);
 
-                let command = Command::new("/usr/bin/systemctl")
-                    .arg("stop")
-                    .arg(&micro_vm.unit_slice)
-                    .status()
-                    .await?;
+            let command = Command::new("/usr/bin/systemctl")
+                .arg("stop")
+                .arg(format!("{}.slice", &simple_uuid))
+                .status()
+                .await?;
 
-                println!("{:?}", &command);
+            println!("{:?}", &command);
 
-                if command.success() {
-                    if let Some(micro_vm) = self.launched_vms.remove(&simple_uuid) {
-                        micro_vm.cleanup_api_socket().await?;
-                        println!(
-                            "{} Removing socket | {:?}",
-                            IMPULSE_ACTUATOR, &micro_vm.api_socket,
-                        );
+            if command.success() {
+                if let Some(micro_vm) = self.launched_vms.remove(&simple_uuid) {
+                    micro_vm.cleanup_api_socket().await?;
+                    println!(
+                        "{} Removing socket | {:?}",
+                        IMPULSE_ACTUATOR, &micro_vm.api_socket,
+                    );
 
-                        micro_vm.cleanup_base().await?;
-                        println!("{} Removing base | {:?}", IMPULSE_ACTUATOR, &micro_vm.base);
+                    micro_vm.cleanup_base().await?;
+                    println!("{} Removing base | {:?}", IMPULSE_ACTUATOR, &micro_vm.base);
 
-                        micro_vm.cleanup_config_path().await?;
-                        println!(
-                            "{} Cleanup config file | {:?}",
-                            IMPULSE_ACTUATOR, &micro_vm.base,
-                        );
+                    micro_vm.cleanup_config_path().await?;
+                    println!(
+                        "{} Cleanup config file | {:?}",
+                        IMPULSE_ACTUATOR, &micro_vm.base,
+                    );
 
-                        println!("{} Shutdown!", IMPULSE_ACTUATOR);
-                    }
+                    println!("{} Shutdown!", IMPULSE_ACTUATOR);
                 }
             }
         }
