@@ -125,43 +125,35 @@ impl Engine {
         Ok(())
     }
 
-    pub async fn shutdown_vm(&mut self, uuid: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn shutdown_vm(
+        &mut self,
+        uuid: &str,
+    ) -> Result<(bool, String), Box<dyn std::error::Error>> {
         let simple_uuid = Self::parse_uuid(uuid).await?;
 
-        if self.launched_vms.contains_key(&simple_uuid) {
-            println!("{} Shutting down VM | {:?}", IMPULSE_ACTUATOR, uuid);
+        match self.launched_vms.contains_key(&simple_uuid) {
+            true => {
+                println!("{} Shutting down VM | {:?}", IMPULSE_ACTUATOR, uuid);
 
-            let command = Command::new("/usr/bin/systemctl")
-                .arg("stop")
-                .arg(format!("{}.slice", &simple_uuid))
-                .status()
-                .await?;
+                let command = Command::new("/usr/bin/systemctl")
+                    .arg("stop")
+                    .arg(format!("{}.slice", &simple_uuid))
+                    .output()
+                    .await?;
 
-            println!("{:?}", &command);
+                if command.status.success() {
+                    if let Some(micro_vm) = self.launched_vms.remove(&simple_uuid) {
+                        Self::run_cleanup(&micro_vm).await?;
 
-            if command.success() {
-                if let Some(micro_vm) = self.launched_vms.remove(&simple_uuid) {
-                    micro_vm.cleanup_api_socket().await?;
-                    println!(
-                        "{} Removing socket | {:?}",
-                        IMPULSE_ACTUATOR, &micro_vm.api_socket,
-                    );
-
-                    micro_vm.cleanup_base().await?;
-                    println!("{} Removing base | {:?}", IMPULSE_ACTUATOR, &micro_vm.base);
-
-                    micro_vm.cleanup_config_path().await?;
-                    println!(
-                        "{} Cleanup config file | {:?}",
-                        IMPULSE_ACTUATOR, &micro_vm.base,
-                    );
-
-                    println!("{} Shutdown!", IMPULSE_ACTUATOR);
+                        println!("{} MicroVM has been shutdown!", IMPULSE_ACTUATOR);
+                    }
+                    Ok((command.status.success(), String::from_utf8(command.stdout)?))
+                } else {
+                    Ok((command.status.success(), String::from_utf8(command.stderr)?))
                 }
             }
+            false => Ok((false, String::from("MicroVM was not found!"))),
         }
-
-        Ok(())
     }
 
     pub async fn shutdown(&mut self) -> Result<(), Box<dyn std::error::Error>> {
@@ -176,6 +168,25 @@ impl Engine {
         let parsed_uuid = Uuid::parse_str(uuid)?;
 
         Ok(parsed_uuid.to_simple())
+    }
+
+    async fn run_cleanup(micro_vm: &MicroVM) -> Result<(), Box<dyn std::error::Error>> {
+        micro_vm.cleanup_api_socket().await?;
+        println!(
+            "{} Removing socket | {:?}",
+            IMPULSE_ACTUATOR, &micro_vm.api_socket,
+        );
+
+        micro_vm.cleanup_base().await?;
+        println!("{} Removing base | {:?}", IMPULSE_ACTUATOR, &micro_vm.base);
+
+        micro_vm.cleanup_config_path().await?;
+        println!(
+            "{} Removing config file | {:?}",
+            IMPULSE_ACTUATOR, &micro_vm.base,
+        );
+
+        Ok(())
     }
 }
 
