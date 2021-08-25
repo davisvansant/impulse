@@ -41,9 +41,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             2 => {
                 println!("shutdown a vm {:?}", task);
-                let (bool, string) = engine.shutdown_vm(&task.id).await?;
+                let (shutdown, details) = engine.shutdown_vm(&task.id).await?;
                 internal_client
-                    .shutdown_result(&task.id, bool, string)
+                    .shutdown_result(&task.id, shutdown, details)
                     .await?;
             }
             _ => (),
