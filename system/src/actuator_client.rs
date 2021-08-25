@@ -54,13 +54,14 @@ impl Internal {
     pub async fn shutdown_result(
         &mut self,
         uuid: &str,
-        bool: bool,
-        string: String,
+        shutdown: bool,
+        details: String,
     ) -> Result<Response<SystemId>, Status> {
         let mut transport = self.transport.clone();
         let request = Request::new(MicroVmShutdown {
-            shutdown: bool,
-            details: uuid.to_string(),
+            uuid: uuid.to_string(),
+            shutdown: shutdown.to_string(),
+            details: details.to_string(),
         });
         let response = transport.shutdown_result(request).await?;
 
