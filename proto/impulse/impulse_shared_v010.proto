@@ -20,6 +20,7 @@ message MicroVMLaunch {
 }
 
 message MicroVMShutdown {
-  bool shutdown = 1;
-  string details = 2;
+  string uuid = 1;
+  string shutdown = 2;
+  string details = 3;
 }
