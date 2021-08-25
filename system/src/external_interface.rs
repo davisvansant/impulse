@@ -245,7 +245,10 @@ mod tests {
         });
         let test_result = tokio::spawn(async move {
             let test_external_shutdown_vm = test_external.shutdown_vm(test_request).await.unwrap();
-            assert!(test_external_shutdown_vm.get_ref().shutdown);
+            assert_eq!(
+                test_external_shutdown_vm.get_ref().shutdown.as_str(),
+                "true",
+            );
             assert_eq!(
                 test_external_shutdown_vm.get_ref().details.as_str(),
                 "test_uuid",
@@ -255,7 +258,8 @@ mod tests {
             tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
         }
         let test_instance_shutdown = MicroVmShutdown {
-            shutdown: true,
+            uuid: "test_uuid".to_string(),
+            shutdown: true.to_string(),
             details: String::from("test_uuid"),
         };
         test_shutdown_result_sender
