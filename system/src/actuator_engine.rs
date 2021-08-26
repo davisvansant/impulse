@@ -66,7 +66,10 @@ impl Engine {
         })
     }
 
-    pub async fn launch_vm(&mut self, uuid: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn launch_vm(
+        &mut self,
+        uuid: &str,
+    ) -> Result<(bool, String), Box<dyn std::error::Error>> {
         println!(
             "{} Preparing to launch new VM | {:?}",
             IMPULSE_ACTUATOR, uuid,
@@ -110,19 +113,21 @@ impl Engine {
             .arg(&micro_vm.api_socket)
             .arg("--config-file")
             .arg(&micro_vm.config_path)
-            .status()
+            .output()
             .await?;
 
         println!("{:?}", &command);
 
-        if command.success() {
+        if command.status.success() {
             let uuid = Self::parse_uuid(uuid).await?;
             if self.launched_vms.insert(uuid, micro_vm).is_none() {
                 println!("{} Launched!", IMPULSE_ACTUATOR);
             }
+        } else {
+            Self::run_cleanup(&micro_vm).await?;
         }
 
-        Ok(())
+        Ok((command.status.success(), String::from_utf8(command.stdout)?))
     }
 
     pub async fn shutdown_vm(
