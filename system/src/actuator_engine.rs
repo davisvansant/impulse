@@ -120,14 +120,17 @@ impl Engine {
 
         if command.status.success() {
             let uuid = Self::parse_uuid(uuid).await?;
+
             if self.launched_vms.insert(uuid, micro_vm).is_none() {
                 println!("{} Launched!", IMPULSE_ACTUATOR);
             }
+
+            Ok((command.status.success(), String::from_utf8(command.stdout)?))
         } else {
             Self::run_cleanup(&micro_vm).await?;
-        }
 
-        Ok((command.status.success(), String::from_utf8(command.stdout)?))
+            Ok((command.status.success(), String::from_utf8(command.stderr)?))
+        }
     }
 
     pub async fn shutdown_vm(
