@@ -40,11 +40,17 @@ impl Internal {
         Ok(response)
     }
 
-    pub async fn launch_result(&mut self, uuid: &str) -> Result<Response<SystemId>, Status> {
+    pub async fn launch_result(
+        &mut self,
+        uuid: &str,
+        launched: bool,
+        details: String,
+    ) -> Result<Response<SystemId>, Status> {
         let mut transport = self.transport.clone();
         let request = Request::new(MicroVmLaunch {
-            launched: true,
-            details: uuid.to_string(),
+            uuid: uuid.to_string(),
+            launched: launched.to_string(),
+            details: details.to_string(),
         });
         let response = transport.launch_result(request).await?;
 
