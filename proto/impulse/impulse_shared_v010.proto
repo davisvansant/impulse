@@ -15,8 +15,9 @@ message Task {
 }
 
 message MicroVMLaunch {
-  bool launched = 1;
-  string details =2;
+  string uuid = 1;
+  string launched = 2;
+  string details = 3;
 }
 
 message MicroVMShutdown {
