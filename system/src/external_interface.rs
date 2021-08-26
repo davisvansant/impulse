@@ -207,18 +207,20 @@ mod tests {
         let test_request = Request::new(Empty {});
         let test_result = tokio::spawn(async move {
             let test_external_launch_vm = test_external.launch_vm(test_request).await.unwrap();
-            assert!(test_external_launch_vm.get_ref().launched);
+            assert_eq!(test_external_launch_vm.get_ref().uuid.as_str(), "test_uuid");
+            assert_eq!(test_external_launch_vm.get_ref().launched.as_str(), "true");
             assert_eq!(
                 test_external_launch_vm.get_ref().details.as_str(),
-                "test_uuid"
+                "success!"
             );
         });
         if test_response_sender.receiver_count() == 0 {
             tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
         }
         let test_instance_start = MicroVmLaunch {
-            launched: true,
-            details: String::from("test_uuid"),
+            uuid: String::from("test_uuid"),
+            launched: true.to_string(),
+            details: String::from("success!"),
         };
         test_response_sender
             .send(test_instance_start)
