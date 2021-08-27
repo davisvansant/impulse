@@ -2,6 +2,7 @@ pub mod actuator_client;
 pub mod actuator_engine;
 pub mod external_interface;
 pub mod internal_interface;
+pub(crate) mod system_error;
 
 pub const IMPULSE_ACTUATOR: &str = ":: i m p u l s e _ a c t u a t o r >";
 pub const IMPULSE_INTERFACE: &str = ":: i m p u l s e _ i n t e r f a c e >";
