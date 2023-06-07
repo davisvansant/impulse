@@ -77,7 +77,7 @@ impl Interface for External {
 
         let task = Task {
             action: 1,
-            id: Uuid::new_v4().to_simple().to_string(),
+            id: Uuid::new_v4().simple().to_string(),
         };
 
         if let Ok(msg) = &self.task_sender.send(task) {

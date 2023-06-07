@@ -228,7 +228,7 @@ mod tests {
         let test_internal_controller = test_internal.controller(test_request).await?;
         let test_task = Task {
             action: 1,
-            id: Uuid::new_v4().to_simple().to_string(),
+            id: Uuid::new_v4().simple().to_string(),
         };
         test_tx.send(test_task).unwrap();
         drop(test_tx);
@@ -261,7 +261,7 @@ mod tests {
         });
         let test_task = Task {
             action: 1,
-            id: Uuid::new_v4().to_simple().to_string(),
+            id: Uuid::new_v4().simple().to_string(),
         };
         test_tx.send(test_task).unwrap();
         let test_internal_controller = test_internal.controller(test_request).await;

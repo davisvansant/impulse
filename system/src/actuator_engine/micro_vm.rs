@@ -24,14 +24,14 @@ impl MicroVM {
         working_base: &Path,
     ) -> Result<MicroVM, Box<dyn std::error::Error>> {
         let mut api_socket = socket_base.to_path_buf();
-        api_socket.push(&uuid.to_string());
+        api_socket.push(uuid);
         api_socket.set_extension("socket");
 
-        let config_file = ConfigFile::build(&uuid.to_string()).await?;
+        let config_file = ConfigFile::build(uuid).await?;
         let config_path = config_file.write(uuid).await?;
 
         let mut base = working_base.to_path_buf();
-        base.push(&uuid.to_string());
+        base.push(uuid);
 
         create_dir_all(&base).await?;
 
@@ -53,13 +53,13 @@ impl MicroVM {
         let initrd_name = "some_initrd";
         let root_fs_name = "some_root_fs";
 
-        let base_kernel_image = images.join(&kernel_image_name);
-        let base_initrd = images.join(&initrd_name);
-        let base_root_fs = images.join(&root_fs_name);
+        let base_kernel_image = images.join(kernel_image_name);
+        let base_initrd = images.join(initrd_name);
+        let base_root_fs = images.join(root_fs_name);
 
-        let running_kernel_image = self.base.as_path().join(&kernel_image_name);
-        let running_initrd = self.base.as_path().join(&initrd_name);
-        let running_root_fs = self.base.as_path().join(&root_fs_name);
+        let running_kernel_image = self.base.as_path().join(kernel_image_name);
+        let running_initrd = self.base.as_path().join(initrd_name);
+        let running_root_fs = self.base.as_path().join(root_fs_name);
 
         copy(base_kernel_image, running_kernel_image).await?;
         copy(base_initrd, running_initrd).await?;
@@ -110,7 +110,7 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn init() -> Result<(), Box<dyn std::error::Error>> {
         let test_micro_vm = MicroVM::init(
-            TEST_MICROVM_UUID.to_simple().to_string().as_str(),
+            TEST_MICROVM_UUID.simple().to_string().as_str(),
             Path::new(TEST_SOCKET_BASE),
             Path::new(TEST_WORKING_BASE),
         )
@@ -143,7 +143,7 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn ready_boot() -> Result<(), Box<dyn std::error::Error>> {
         let test_micro_vm = MicroVM::init(
-            TEST_MICROVM_UUID.to_simple().to_string().as_str(),
+            TEST_MICROVM_UUID.simple().to_string().as_str(),
             Path::new(TEST_SOCKET_BASE),
             Path::new(TEST_WORKING_BASE),
         )
@@ -174,12 +174,12 @@ mod tests {
         let test_socket = format!(
             "{}/{}",
             TEST_SOCKET_BASE,
-            TEST_MICROVM_UUID.to_simple().to_string().as_str(),
+            TEST_MICROVM_UUID.simple().to_string().as_str(),
         );
         tokio::fs::create_dir_all(test_socket).await?;
 
         let test_micro_vm = MicroVM::init(
-            TEST_MICROVM_UUID.to_simple().to_string().as_str(),
+            TEST_MICROVM_UUID.simple().to_string().as_str(),
             Path::new(TEST_SOCKET_BASE),
             Path::new(TEST_WORKING_BASE),
         )
@@ -195,7 +195,7 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn cleanup_api_socket_error() -> Result<(), Box<dyn std::error::Error>> {
         let test_micro_vm = MicroVM::init(
-            TEST_MICROVM_UUID.to_simple().to_string().as_str(),
+            TEST_MICROVM_UUID.simple().to_string().as_str(),
             Path::new(TEST_SOCKET_BASE),
             Path::new(TEST_WORKING_BASE),
         )
@@ -208,7 +208,7 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn cleanup_base_ok() -> Result<(), Box<dyn std::error::Error>> {
         let test_micro_vm = MicroVM::init(
-            TEST_MICROVM_UUID.to_simple().to_string().as_str(),
+            TEST_MICROVM_UUID.simple().to_string().as_str(),
             Path::new(TEST_SOCKET_BASE),
             Path::new(TEST_WORKING_BASE),
         )
@@ -226,7 +226,7 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn cleanup_base_error() -> Result<(), Box<dyn std::error::Error>> {
         let test_micro_vm = MicroVM::init(
-            TEST_MICROVM_UUID.to_simple().to_string().as_str(),
+            TEST_MICROVM_UUID.simple().to_string().as_str(),
             Path::new(TEST_SOCKET_BASE),
             Path::new(TEST_WORKING_BASE),
         )
@@ -242,7 +242,7 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn cleanup_config_path_ok() -> Result<(), Box<dyn std::error::Error>> {
         let test_micro_vm = MicroVM::init(
-            TEST_MICROVM_UUID.to_simple().to_string().as_str(),
+            TEST_MICROVM_UUID.simple().to_string().as_str(),
             Path::new(TEST_SOCKET_BASE),
             Path::new(TEST_WORKING_BASE),
         )
@@ -257,7 +257,7 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn cleanup_config_path_error() -> Result<(), Box<dyn std::error::Error>> {
         let test_micro_vm = MicroVM::init(
-            TEST_MICROVM_UUID.to_simple().to_string().as_str(),
+            TEST_MICROVM_UUID.simple().to_string().as_str(),
             Path::new(TEST_SOCKET_BASE),
             Path::new(TEST_WORKING_BASE),
         )

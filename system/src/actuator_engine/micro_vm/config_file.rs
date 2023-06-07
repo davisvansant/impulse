@@ -166,8 +166,7 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn build() -> Result<(), Box<dyn std::error::Error>> {
-        let test_config_file =
-            ConfigFile::build(TEST_UUID.to_simple().to_string().as_str()).await?;
+        let test_config_file = ConfigFile::build(TEST_UUID.simple().to_string().as_str()).await?;
         assert_eq!(
             test_config_file
                 .boot_source
@@ -204,10 +203,9 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn write() -> Result<(), Box<dyn std::error::Error>> {
-        let test_config_file =
-            ConfigFile::build(TEST_UUID.to_simple().to_string().as_str()).await?;
+        let test_config_file = ConfigFile::build(TEST_UUID.simple().to_string().as_str()).await?;
         test_config_file
-            .write(TEST_UUID.to_simple().to_string().as_str())
+            .write(TEST_UUID.simple().to_string().as_str())
             .await?;
         let test_config_file_metadata = tokio::fs::metadata(
             "/var/lib/impulse_actuator/machine/00000000000000000000000000000000/config_file.json",

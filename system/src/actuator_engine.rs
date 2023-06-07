@@ -5,7 +5,8 @@ use std::process::Stdio;
 use tokio::fs;
 use tokio::process::Command;
 
-use uuid::adapter::Simple;
+// use uuid::adapter::Simple;
+use uuid::fmt::Simple;
 use uuid::Uuid;
 
 use crate::IMPULSE_ACTUATOR;
@@ -175,7 +176,7 @@ impl Engine {
     async fn parse_uuid(uuid: &str) -> Result<Simple, Box<dyn std::error::Error>> {
         let parsed_uuid = Uuid::parse_str(uuid)?;
 
-        Ok(parsed_uuid.to_simple())
+        Ok(parsed_uuid.simple())
     }
 
     async fn run_cleanup(micro_vm: &MicroVM) -> Result<(), Box<dyn std::error::Error>> {
@@ -253,7 +254,7 @@ mod tests {
     async fn launch_vm() -> Result<(), Box<dyn std::error::Error>> {
         let mut test_engine = Engine::init().await?;
         let test_engine_boot = test_engine
-            .launch_vm(TEST_LAUNCH_VM_UUID.to_simple().to_string().as_str())
+            .launch_vm(TEST_LAUNCH_VM_UUID.simple().to_string().as_str())
             .await;
         assert!(test_engine_boot.is_err());
         assert!(test_engine.launched_vms.is_empty());
@@ -264,7 +265,7 @@ mod tests {
     async fn shutdown_vm() {
         let mut test_engine = Engine::init().await.unwrap();
         let test_engine_shutdown_vm = test_engine
-            .shutdown_vm(TEST_LAUNCH_VM_UUID.to_simple().to_string().as_str())
+            .shutdown_vm(TEST_LAUNCH_VM_UUID.simple().to_string().as_str())
             .await;
         assert!(test_engine_shutdown_vm.is_ok());
     }
@@ -281,10 +282,10 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn parse_uuid() -> Result<(), Box<dyn std::error::Error>> {
         let test_parse_uuid =
-            Engine::parse_uuid(TEST_LAUNCH_VM_UUID.to_simple().to_string().as_str()).await?;
+            Engine::parse_uuid(TEST_LAUNCH_VM_UUID.simple().to_string().as_str()).await?;
         assert_eq!(
             test_parse_uuid,
-            Uuid::parse_str("00000000000000000000000000000000")?.to_simple(),
+            Uuid::parse_str("00000000000000000000000000000000")?.simple(),
         );
         Ok(())
     }
