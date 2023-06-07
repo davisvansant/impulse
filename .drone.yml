@@ -4,10 +4,11 @@ name: default
 
 steps:
   - name: test
-    image: rust:1.57.0
+    image: rust:1.70.0
     environment:
       RUST_BACKTRACE: full
     commands:
+      - apt-get update && apt-get install -y protobuf-compiler
       - rustup component add rustfmt clippy
       - rustc --version
       - cargo clippy --version
